@@ -1,0 +1,8 @@
+listen:
+    respawn: false
+worlds:
+    normalWorld: world
+    netherWorld: netherWorld
+scale:
+    normal: 8
+    nether: 1
