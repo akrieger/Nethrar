@@ -57,7 +57,7 @@ public class PortalsMain extends JavaPlugin {
 		}
 
 		int normalScale, netherScale;
-		normalScale = getConfiguration().getInt("scale.normal", 1);
+		normalScale = getConfiguration().getInt("scale.normal", 8);
 		netherScale = getConfiguration().getInt("scale.nether", 1);
 
 		PortalUtil.initialize(normalWorld, netherWorld, normalScale, netherScale);
