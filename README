@@ -1,3 +1,5 @@
+## Introduction ##
+
 Portals is an attempt at a strict and somewhat faithful reproduction of the
 portal behavior found in Minecraft Survival Single Player (SSP) for the Bukkit
 mod plugin system, with some extensions. Portals are created with a direct
@@ -9,6 +11,21 @@ world. Portals will not create themselves in configurations which are otherwise
 invalid in SSP, such as two portals directly face-to-face adjacent. Other valid
 configurations may not appear, however no directly contradictory configuration
 should appear.
+
+## Building ##
+
+This assumes your system has a sensible Java installation and appropriate path
+settings. Adapt these instructions as needed for your system.
+
+1) Download a copy of Bukkit/CraftBukkit from http://wiki.bukkit.org/Main_Page
+   to somewhere on your filesystem.
+2) Edit the BUKKIT_API variable in Makefile.generic to point to the jar file you
+   downloaded.
+3) make -f Makefile.generic
+4) Install the resulting .jar file and config.yml into the plugins/ directory
+   of your CraftBukkit server as normal.
+
+## License ##
 
 Copyright (C) 2011 Andrew Krieger
 
