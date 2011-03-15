@@ -264,22 +264,14 @@ public class PortalUtil {
 			platformBlocks.add(world.getBlockAt(destX + 1, destY - 1, destZ + 1));
 		}
 
-
-		// Check for remnants of previous or adjacent portals.
-		for (Block keyBlock : frameBlocks) {
-			if (keyBlock.getType() == Material.OBSIDIAN) {
-				return null;
-			}
-		}
-
 		for (Block newAirBlock : airBlocks) {
-			if (newAirBlock.getType() == Material.OBSIDIAN) {
+			if (newAirBlock.getType().equals(Material.OBSIDIAN)) {
 				return null;
 			}
 		}
 
 		for (Block newPlatformBlock : platformBlocks) {
-			if (newPlatformBlock.getType() == Material.OBSIDIAN) {
+			if (newPlatformBlock.getType().equals(Material.OBSIDIAN)) {
 				return null;
 			}
 		}
@@ -300,7 +292,7 @@ public class PortalUtil {
 
 		dest.setType(Material.FIRE);
 
-		if (dest.getType() == Material.PORTAL) {
+		if (dest.getType().equals(Material.PORTAL)) {
 			// Successful portal ignition.
 			return getPortalAt(dest);
 		}

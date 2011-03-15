@@ -173,7 +173,10 @@ public class Portal {
 			int destX, destY, destZ;
 			Block destBlock;
 
-			double scale = PortalUtil.getNormalScale() / PortalUtil.getNetherScale();
+			double scale = PortalUtil.getNormalScale() / (double)PortalUtil.getNetherScale();
+
+			System.out.println("Scale is: " + scale);
+
 			if (this.inNether) {
 				destX = (int)(this.keyBlock.getX() * scale);
 				destY = this.keyBlock.getY();
