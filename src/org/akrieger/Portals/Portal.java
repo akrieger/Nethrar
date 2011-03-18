@@ -106,6 +106,11 @@ public class Portal {
 		return this.facingNorth;
 	}
 
+	/** Returns whether this Portal is in the Nether. */
+	public boolean isInNether() {
+		return this.inNether;
+	}
+
 	/** Returns the counterpart Portal for this Portal. */
 	public Portal getCounterpart() {
 		return this.counterpart;
@@ -152,51 +157,14 @@ public class Portal {
 	 *     player was not teleported.
 	 */
 	public Location teleportPlayer(Player player) {
-
 		if (this.counterpart != null) {
 			if (!this.counterpart.isValid()) {
 				PortalUtil.removePortal(this.counterpart);
 				this.counterpart = null;
+				PortalUtil.getCounterpartPortalFor(this);
 			}
-		}
-
-		World destWorld;
-
-		if (this.inNether) {
-			destWorld = PortalUtil.getNormalWorld();
 		} else {
-			destWorld = PortalUtil.getNetherWorld();
-		}
-
-		if (this.counterpart == null) {
-			// Calculate the counterpart portal's keyblock location.
-			int destX, destY, destZ;
-			Block destBlock;
-
-			double scale = PortalUtil.getNormalScale() / (double)PortalUtil.getNetherScale();
-
-			System.out.println("Scale is: " + scale);
-
-			if (this.inNether) {
-				destX = (int)(this.keyBlock.getX() * scale);
-				destY = this.keyBlock.getY();
-				destZ = (int)(this.keyBlock.getZ() * scale);
-			} else {
-				destX = (int)(this.keyBlock.getX() / scale);
-				destY = this.keyBlock.getY();
-				destZ = (int)(this.keyBlock.getZ() / scale);
-			}
-
-			destBlock = destWorld.getBlockAt(destX, destY, destZ);
-
-			// Don't let the portal go into bedrock.
-			// Layer 6 for the portal, layer 5 for the obsidian
-			// Bedrock at layer 4 and below.
-			if (destY < 6) {
-				destY = 6;
-			}
-
-			PortalUtil.linkPortals(this, PortalUtil.getOrCreatePortalAt(this, destBlock));
+			PortalUtil.getCounterpartPortalFor(this);
 		}
 
 		if (this.counterpart == null) {
@@ -247,6 +215,8 @@ public class Portal {
 				finalOffset = offset;
 			}
 		}
+
+		World destWorld = this.counterpart.getKeyBlock().getWorld();
 
 		destX = this.counterpart.getKeyBlock().getX() + finalOffset.getX();
 		destY = this.counterpart.getKeyBlock().getY() + finalOffset.getY();
@@ -340,6 +310,12 @@ public class Portal {
 				portalValid = false;
 				break;
 			}
+		}
+
+		if (portalValid) {
+			System.out.println("Counterpart valid!");
+		} else {
+			System.out.println("Counterpart invalid!");
 		}
 	
 		// TODO: add more validity tests.
