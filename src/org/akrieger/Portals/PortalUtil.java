@@ -484,7 +484,6 @@ public class PortalUtil {
 			maxX = (int)Math.ceil((sourceX + deltas[i + 1]) * scale - 1);
 			minZ = (int)Math.ceil((sourceZ + deltas[i + 2]) * scale);
 			maxZ = (int)Math.ceil((sourceZ + deltas[i + 3]) * scale - 1);
-			System.out.println("Searching from (" + minX + ", " + minY + ", " + minZ + ") to (" + maxX + ", " + maxY + ", " + maxZ + ").");
 			portals.addAll(findPortalsInRegion(
 				minX, minY, minZ, maxX, maxY, maxZ, destWorld));
 		}

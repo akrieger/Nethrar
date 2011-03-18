@@ -247,7 +247,6 @@ public class Portal {
 			player.teleportTo(dest);
 			newV.setPassenger(player);
 			Vector oldVelocity = oldV.getVelocity();
-			System.out.println("Minecart velocity: " + oldVelocity);
 			Vector newVelocity;
 			switch (rotateVehicleVelocity) {
 				// Left-handed system - clockwise is positive.
@@ -312,12 +311,6 @@ public class Portal {
 			}
 		}
 
-		if (portalValid) {
-			System.out.println("Counterpart valid!");
-		} else {
-			System.out.println("Counterpart invalid!");
-		}
-	
 		// TODO: add more validity tests.
 		return portalValid;
 	}
