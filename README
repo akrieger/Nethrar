@@ -2,15 +2,21 @@
 
 Portals is an attempt at a strict and somewhat faithful reproduction of the
 portal behavior found in Minecraft Survival Single Player (SSP) for the Bukkit
-mod plugin system, with some extensions. Portals are created with a direct
-spatial mapping from normal world coordinates to Nether world coordinates.
-Portals create a small air pocket and platform when first created. So, a portal
-that is on solid ground in the normal world may create a portal in mid-air in
-the nether, and a portal from the Nether may appear underwater in the normal
-world. Portals will not create themselves in configurations which are otherwise
-invalid in SSP, such as two portals directly face-to-face adjacent. Other valid
-configurations may not appear, however no directly contradictory configuration
-should appear.
+mod plugin system, with some extensions.
+
+Portals are created with a direct spatial mapping from normal world coordinates
+to Nether world coordinates. Portals create a small air pocket and platform
+when first created, excepting obsidian blocks. So, a portal that is on solid
+ground in the normal world may create a portal in mid-air in the nether, and a
+portal from the Nether may appear underwater in the normal world. Portals will
+not create themselves in configurations which are otherwise invalid in SSP, such
+as two portals directly face-to-face adjacent. Other valid configurations may
+not appear, however no directly contradictory configuration should appear.
+Portals from the Nether to the real world also follow an extremely conservative
+approach to generating new portals. A portal newly entered from the Nether will
+check all areas of them normal world for a portal that would link to said portal
+in the Nether. It will then choose the closest one to link to, and teleport the
+player to that portal.
 
 Portals currently operate under the "as if it were a door" policy - walking
 through the portal should be like walking through a door. Your facing and
