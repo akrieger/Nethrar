@@ -1,8 +1,8 @@
 ## Introduction ##
 
-Portals is an attempt at a strict and somewhat faithful reproduction of the
+Nethrar is an attempt at a strict and somewhat faithful reproduction of the
 portal behavior found in Minecraft Survival Single Player (SSP) for the Bukkit
-mod plugin system, with some extensions.
+mod plugin system, with some extensions. Don't ask about the name.
 
 Portals are created with a direct spatial mapping from normal world coordinates
 to Nether world coordinates. Portals create a small air pocket and platform

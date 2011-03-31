@@ -2,7 +2,7 @@
  * Copyright (C) 2011 Andrew Krieger.
  */
 
-package org.akrieger.Portals;
+package org.akrieger.Nethrar;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

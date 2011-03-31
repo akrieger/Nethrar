@@ -1,5 +1,5 @@
 
-SRCS=	org/akrieger/Portals/PortalsMain.java \
-	org/akrieger/Portals/PortalsPlayerListener.java \
-	org/akrieger/Portals/Portal.java \
-	org/akrieger/Portals/PortalUtil.java
+SRCS=	org/akrieger/Nethrar/NethrarMain.java \
+	org/akrieger/Nethrar/NethrarPlayerListener.java \
+	org/akrieger/Nethrar/Portal.java \
+	org/akrieger/Nethrar/PortalUtil.java

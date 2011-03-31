@@ -2,7 +2,7 @@
  * Copyright (C) 2011 Andrew Krieger.
  */
 
-package org.akrieger.Portals;
+package org.akrieger.Nethrar;
 
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
@@ -25,8 +25,8 @@ import org.bukkit.plugin.*;
  *
  * @author akrieger
  */
-public class PortalsMain extends JavaPlugin {
-	private final PortalsPlayerListener playerListener = new PortalsPlayerListener();
+public class NethrarMain extends JavaPlugin {
+	private final NethrarPlayerListener playerListener = new NethrarPlayerListener();
 
 	public void onEnable() {
 		PluginManager pm = getServer().getPluginManager();

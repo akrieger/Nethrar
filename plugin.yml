@@ -1,6 +1,6 @@
-name: Portals
+name: Nethrar
 author: Andrew krieger
 description: Portals, now with minecart support!
 version: 1.0
-main: org.akrieger.Portals.PortalsMain
+main: org.akrieger.Nethrar.NethrarMain
 

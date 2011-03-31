@@ -2,7 +2,7 @@
  * Copyright (C) 2011 Andrew Krieger.
  */
 
-package org.akrieger.Portals;
+package org.akrieger.Nethrar;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerListener;
@@ -23,8 +23,8 @@ import org.bukkit.World.Environment;
  *
  * @author Andrew Krieger
  */
-public class PortalsPlayerListener extends PlayerListener {
-	public PortalsPlayerListener() { }
+public class NethrarPlayerListener extends PlayerListener {
+	public NethrarPlayerListener() { }
 
 	@Override
 	public void onPlayerMove(PlayerMoveEvent event) {
