@@ -244,7 +244,7 @@ public class Portal {
 			Vehicle oldV = player.getVehicle();
 			player.leaveVehicle();
 			Vehicle newV = destWorld.spawnMinecart(dest);
-			player.teleportTo(dest);
+			player.teleport(dest);
 			newV.setPassenger(player);
 			Vector oldVelocity = oldV.getVelocity();
 			Vector newVelocity;
@@ -272,7 +272,7 @@ public class Portal {
 			oldV.remove();
 			return dest;
 		} else {
-			player.teleportTo(dest);
+			player.teleport(dest);
 			return dest; 
 		}
 	}
