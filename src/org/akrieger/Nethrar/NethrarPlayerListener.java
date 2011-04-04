@@ -4,6 +4,8 @@
 
 package org.akrieger.Nethrar;
 
+import com.nijiko.permissions.PermissionHandler;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -31,6 +33,11 @@ public class NethrarPlayerListener extends PlayerListener {
 		Block b;
 		Player player = event.getPlayer();
 		
+		if (Nethrar.permissions != null &&
+			!Nethrar.permissions.has(player, "nethrar.use")) {
+			return;
+		}
+
 		if (!event.getPlayer().isInsideVehicle()) {
 			b = event.getTo().getBlock();
 		} else {

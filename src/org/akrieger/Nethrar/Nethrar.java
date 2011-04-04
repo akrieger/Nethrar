@@ -4,6 +4,9 @@
 
 package org.akrieger.Nethrar;
 
+import com.nijiko.permissions.PermissionHandler;
+import com.nijikokun.bukkit.Permissions.Permissions;
+
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -28,7 +31,10 @@ import java.util.logging.Logger;
  *
  * @author akrieger
  */
-public class NethrarMain extends JavaPlugin {
+public class Nethrar extends JavaPlugin {
+
+	public static PermissionHandler permissions;
+
 	private final NethrarPlayerListener playerListener =
 		new NethrarPlayerListener();
 	private final Logger log = Logger.getLogger("Minecraft.Nethrar");
@@ -42,16 +48,16 @@ public class NethrarMain extends JavaPlugin {
 		if (getConfiguration().getBoolean("listen.respawn", true)) {
 			pm.registerEvent(Event.Type.PLAYER_RESPAWN, playerListener,
 				Priority.Normal, this);
-			log.log(Level.INFO, "[NETHRAR] Listening for player respawns.");
+			log.info("[NETHRAR] Listening for player respawns.");
 		} else {
-			log.log(Level.INFO, "[NETHRAR] Not listening for player respawns.");
+			log.info("[NETHRAR] Not listening for player respawns.");
 		}
 
 		String normalWorldName = getConfiguration().getString(
 		    "worlds.normalWorld", "world");
 		World normalWorld = getServer().getWorld(normalWorldName);
 
-		log.log(Level.INFO, "[NETHRAR] Normal world name: " + normalWorldName);
+		log.info("[NETHRAR] Normal world name: " + normalWorldName);
 
 		if (normalWorld == null) {
 			normalWorld = getServer().createWorld(
@@ -67,20 +73,36 @@ public class NethrarMain extends JavaPlugin {
 			    netherWorldName, Environment.NETHER);
 		}
 
-		log.log(Level.INFO, "[NETHRAR] Nether world name: " + netherWorldName);
+		log.info("[NETHRAR] Nether world name: " + netherWorldName);
 
 		int normalScale, netherScale;
 		normalScale = getConfiguration().getInt("scale.normal", 8);
 		netherScale = getConfiguration().getInt("scale.nether", 1);
 
-		log.log(Level.INFO, "[NETHRAR] Normal : Nether scale: " + normalScale +
-			":" + netherScale);
+		log.info("[NETHRAR] Normal : Nether scale: "
+			+ normalScale + ":" + netherScale);
 
-		PortalUtil.initialize(normalWorld, netherWorld, normalScale, netherScale);
+		setupPermissions();
+
+		PortalUtil.initialize(normalWorld, netherWorld,
+			normalScale, netherScale);
 
 		PluginDescriptionFile pdfFile = this.getDescription();
-		log.log(Level.INFO, "[NETHRAR] " + pdfFile.getName() + " v" +
+		log.info("[NETHRAR] " + pdfFile.getName() + " v" +
 			pdfFile.getVersion() + " enabled.");
+	}
+
+	private void setupPermissions() {
+		Plugin test = getServer().getPluginManager().getPlugin("Permissions");
+
+		if (this.permissions == null) {
+			if (test != null) {
+				this.permissions = ((Permissions)test).getHandler();
+				log.info("[NETHRAR] Permissions enabled.");
+			} else {
+				log.info("[NETHRAR] Permissions not detected.");
+			}
+		}
 	}
 
 	public void onDisable() { }
