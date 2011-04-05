@@ -4,13 +4,13 @@
 
 package org.akrieger.Nethrar;
 
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Minecart;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
@@ -33,8 +33,11 @@ import java.util.Set;
 public class PortalUtil {
 
 	private static Map<Location, Portal> portals;
+	// Hax. Encode the chunk coordinates into a Location cause we don't have
+	// anything better.
+	private static Set<Location> forceLoadedChunks;
 	private static World normalWorld, netherWorld;
-	private static int normalScale, netherScale;
+	private static int normalScale, netherScale, keepAliveRadius;
 
 	/**
 	 * Initializes the utility class with the given worlds and relative spatial
@@ -55,13 +58,17 @@ public class PortalUtil {
 	 * @return true
 	 */
 	public static boolean initialize(World newNormalWorld,
-			World newNetherWorld, int newNormalScale, int newNetherScale) {
+			World newNetherWorld, int newNormalScale, int newNetherScale,
+			int newKeepAliveRadius) {
 
 		portals = new HashMap<Location, Portal>();
+		forceLoadedChunks = new HashSet<Location>();
 		normalWorld = newNormalWorld;
 		netherWorld = newNetherWorld;
 		normalScale = newNormalScale;
 		netherScale = newNetherScale;
+		keepAliveRadius = newKeepAliveRadius;
+		// TODO: Prune out loaded chunks.
 
 		return true;
 	}
@@ -166,6 +173,21 @@ public class PortalUtil {
 			// Newly entered portal.
 			newPortal = new Portal(b.getWorld()
 										  .getBlockAt(keyX, keyY, keyZ));
+			// This is the only place Portals are "new'd".
+			if (keepAliveRadius > 0) {
+				int chunkX = newPortal.getKeyBlock().getChunk().getX();
+				int chunkZ = newPortal.getKeyBlock().getChunk().getZ();
+				for (int x = chunkX - keepAliveRadius + 1,
+					endx = chunkX + keepAliveRadius - 1; x <= endx; x++) {
+
+					for (int z = chunkZ - keepAliveRadius + 1,
+						endz = chunkZ + keepAliveRadius - 1; z <= endz; z++) {
+
+						Location temp = new Location(bWorld, x, 0, z);
+						forceLoadedChunks.add(temp);
+					}
+				}
+			}
 		}
 		return newPortal;
 	}
@@ -546,5 +568,10 @@ public class PortalUtil {
 		if (b.getCounterpart() == null) {
 			b.setCounterpart(a);
 		}
+	}
+
+	public static boolean isChunkForcedLoaded(Chunk c) {
+		Location chunkLoc = new Location(c.getWorld(), c.getX(), 0, c.getZ());
+		return forceLoadedChunks.contains(chunkLoc);
 	}
 }

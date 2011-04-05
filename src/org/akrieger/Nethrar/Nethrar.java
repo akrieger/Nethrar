@@ -37,9 +37,15 @@ public class Nethrar extends JavaPlugin {
 
 	private final NethrarPlayerListener playerListener =
 		new NethrarPlayerListener();
+
+	private final NethrarWorldListener worldListener =
+		new NethrarWorldListener();
+
 	private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
 	public void onEnable() {
+		setupPermissions();
+
 		PluginManager pm = getServer().getPluginManager();
 
 		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
@@ -75,17 +81,24 @@ public class Nethrar extends JavaPlugin {
 
 		log.info("[NETHRAR] Nether world name: " + netherWorldName);
 
-		int normalScale, netherScale;
+		int normalScale, netherScale, keepAliveRadius;
 		normalScale = getConfiguration().getInt("scale.normal", 8);
 		netherScale = getConfiguration().getInt("scale.nether", 1);
+		keepAliveRadius = getConfiguration().getInt("forceLoadRadius", 0);
 
 		log.info("[NETHRAR] Normal : Nether scale: "
 			+ normalScale + ":" + netherScale);
 
-		setupPermissions();
+		log.info("[NETHRAR] Forcing chunks to stay loaded in a radius of " +
+			keepAliveRadius + " around portals.");
+
+		if (keepAliveRadius > 0) {
+			pm.registerEvent(Event.Type.CHUNK_UNLOAD, worldListener,
+				Priority.Normal, this);
+		}
 
 		PortalUtil.initialize(normalWorld, netherWorld,
-			normalScale, netherScale);
+			normalScale, netherScale, keepAliveRadius);
 
 		PluginDescriptionFile pdfFile = this.getDescription();
 		log.info("[NETHRAR] " + pdfFile.getName() + " v" +

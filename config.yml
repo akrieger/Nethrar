@@ -6,3 +6,4 @@ worlds:
 scale:
     normal: 8
     nether: 1
+forceLoadRadius: 0
