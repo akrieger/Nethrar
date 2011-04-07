@@ -128,6 +128,13 @@ public class Portal {
 		return this.keyBlock.getLocation();
 	}
 
+	/** Returns whether this Portal equals the other Portal. */
+	public boolean equals(Portal p) {
+		return this.keyBlock.equals(p.getKeyBlock()) &&
+			this.keyBlock.getWorld().equals(p.getKeyBlock().getWorld()) &&
+			this.facingNorth == p.isFacingNorth();
+	}
+
 	/**
 	 * Teleports the passed in Player through the portal.
 	 *

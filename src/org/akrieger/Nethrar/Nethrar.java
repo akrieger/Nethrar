@@ -17,7 +17,6 @@ import org.bukkit.World.Environment;
 
 import org.bukkit.plugin.*;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

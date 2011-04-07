@@ -15,6 +15,9 @@ import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,11 +36,13 @@ import java.util.Set;
 public class PortalUtil {
 
 	private static Map<Location, Portal> portals;
-	// Hax. Encode the chunk coordinates into a Location cause we don't have
-	// anything better.
-	private static Set<Location> forceLoadedChunks;
+	// Map of chunks, encoded in a Location object, and a list of portals
+	// keeping that chunk loaded.
+	private static Map<Location, List<Portal>> forceLoadedChunks;
 	private static World normalWorld, netherWorld;
 	private static int normalScale, netherScale, keepAliveRadius;
+
+	private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
 	/**
 	 * Initializes the utility class with the given worlds and relative spatial
@@ -62,13 +67,12 @@ public class PortalUtil {
 			int newKeepAliveRadius) {
 
 		portals = new HashMap<Location, Portal>();
-		forceLoadedChunks = new HashSet<Location>();
+		forceLoadedChunks = new HashMap<Location, List<Portal>>();
 		normalWorld = newNormalWorld;
 		netherWorld = newNetherWorld;
 		normalScale = newNormalScale;
 		netherScale = newNetherScale;
 		keepAliveRadius = newKeepAliveRadius;
-		// TODO: Prune out loaded chunks.
 
 		return true;
 	}
@@ -85,12 +89,43 @@ public class PortalUtil {
 	 * Removes the given Portal, and updates mappings accordingly.
 	 */
 	public static boolean removePortal(Portal p) {
-		return removePortalAt(p.getKeyBlock());
+		Block b = p.getKeyBlock();
+		if (keepAliveRadius > 0) {
+			int chunkX = b.getChunk().getX();
+			int chunkZ = b.getChunk().getZ();
+			World bWorld = b.getWorld();
+			for (int x = chunkX - keepAliveRadius + 1,
+				endx = chunkX + keepAliveRadius - 1; x <= endx; x++) {
+
+				for (int z = chunkZ - keepAliveRadius + 1,
+					endz = chunkZ + keepAliveRadius - 1; z <= endz; z++) {
+
+					Location tempLoc = new Location(bWorld, x, 0, z);
+					List<Portal> tempList = forceLoadedChunks.get(tempLoc);
+					if (tempList != null) {
+						if (!tempList.remove(p)) {
+							log.warning("Chunk location " + tempLoc + " did " +
+								"not have the portal at " + b + " linked to " +
+								"it.");
+						}
+						if (tempList.isEmpty()) {
+							forceLoadedChunks.remove(tempLoc);
+							bWorld.unloadChunk(x, z);
+						}
+					} else {
+						log.warning("Chunk location " + tempLoc + " was not " +
+							"kept loaded when it should have been.");
+					}
+				}
+			}
+		}
+		return portals.remove(b.getLocation()) != null;
 	}
 
 	/** Attempts to remove a Portal whose keyBlock is at the given Block. */
 	public static boolean removePortalAt(Block b) {
-		return portals.remove(b.getLocation()) != null;
+		Portal temp = getPortalAt(b);
+		return removePortal(temp);
 	}
 
 	/** 
@@ -183,8 +218,16 @@ public class PortalUtil {
 					for (int z = chunkZ - keepAliveRadius + 1,
 						endz = chunkZ + keepAliveRadius - 1; z <= endz; z++) {
 
-						Location temp = new Location(bWorld, x, 0, z);
-						forceLoadedChunks.add(temp);
+						Location tempLoc = new Location(bWorld, x, 0, z);
+						List<Portal> tempList = forceLoadedChunks.get(tempLoc);
+						if (tempList == null) {
+							tempList = new LinkedList<Portal>();
+							tempList.add(newPortal);
+							forceLoadedChunks.put(tempLoc, tempList);
+							bWorld.loadChunk(x, z);
+						} else {
+							tempList.add(newPortal);
+						}
 					}
 				}
 			}
@@ -572,6 +615,6 @@ public class PortalUtil {
 
 	public static boolean isChunkForcedLoaded(Chunk c) {
 		Location chunkLoc = new Location(c.getWorld(), c.getX(), 0, c.getZ());
-		return forceLoadedChunks.contains(chunkLoc);
+		return forceLoadedChunks.keySet().contains(chunkLoc);
 	}
 }
