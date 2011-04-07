@@ -4,11 +4,13 @@
 
 package org.akrieger.Nethrar;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.util.Vector;
@@ -241,9 +243,9 @@ public class Portal {
 		// minecart. Probably because minecart takes over player camera. 
 		// Todo: Spawn a boat if necessary, vs. always spawning minecarts.
 		if (player.isInsideVehicle()) {
-			Vehicle oldV = player.getVehicle();
+			Minecart oldV = (Minecart)player.getVehicle();
 			player.leaveVehicle();
-			Vehicle newV = destWorld.spawnMinecart(dest);
+			Minecart newV = destWorld.spawnMinecart(dest);
 			player.teleport(dest);
 			newV.setPassenger(player);
 			Vector oldVelocity = oldV.getVelocity();
@@ -269,6 +271,7 @@ public class Portal {
 					break;
 			}
 			newV.setVelocity(newVelocity);
+			Bukkit.getServer().getPluginManager().callEvent(new NethrarMinecartTeleportEvent(oldV, newV));
 			oldV.remove();
 			return dest;
 		} else {
