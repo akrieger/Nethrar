@@ -1,5 +1,5 @@
 listen:
-    respawn: false
+    respawn: true 
 worlds:
     normalWorld: world
     netherWorld: netherWorld
