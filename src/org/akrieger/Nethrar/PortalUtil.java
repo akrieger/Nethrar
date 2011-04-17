@@ -110,7 +110,7 @@ public class PortalUtil {
 						}
 						if (tempList.isEmpty()) {
 							forceLoadedChunks.remove(tempLoc);
-							bWorld.unloadChunk(x, z);
+							bWorld.unloadChunkRequest(x, z);
 						}
 					} else {
 						log.warning("Chunk location " + tempLoc + " was not " +
@@ -472,13 +472,19 @@ public class PortalUtil {
 			Set<Portal> potentialPortals = new HashSet<Portal>();
 
 			if (source.isFacingNorth()) {
-				potentialPortals.addAll(findPortalsInDeltaRegions(ndeltas, scale, sourceKeyBlock, destWorld));
-				potentialPortals.addAll(findPortalsInDeltaRegions(nsdeltas, scale, sourceKeyBlock, destWorld));
-				potentialPortals.addAll(findPortalsInDeltaRegions(nodeltas, scale, sourceKeyBlock, destWorld));
+				potentialPortals.addAll(findPortalsInDeltaRegions(
+					ndeltas, scale, sourceKeyBlock, destWorld));
+				potentialPortals.addAll(findPortalsInDeltaRegions(
+					nsdeltas, scale, sourceKeyBlock, destWorld));
+				potentialPortals.addAll(findPortalsInDeltaRegions(
+					nodeltas, scale, sourceKeyBlock, destWorld));
 			} else {
-				potentialPortals.addAll(findPortalsInDeltaRegions(wdeltas, scale, sourceKeyBlock, destWorld));
-				potentialPortals.addAll(findPortalsInDeltaRegions(wsdeltas, scale, sourceKeyBlock, destWorld));
-				potentialPortals.addAll(findPortalsInDeltaRegions(wodeltas, scale, sourceKeyBlock, destWorld));
+				potentialPortals.addAll(findPortalsInDeltaRegions(
+					wdeltas, scale, sourceKeyBlock, destWorld));
+				potentialPortals.addAll(findPortalsInDeltaRegions(
+					wsdeltas, scale, sourceKeyBlock, destWorld));
+				potentialPortals.addAll(findPortalsInDeltaRegions(
+					wodeltas, scale, sourceKeyBlock, destWorld));
 			}
 
 			Vector destVector = new Vector(destX, destY, destZ);
@@ -486,7 +492,8 @@ public class PortalUtil {
 			Portal candidatePortal = null;
 
 			for (Portal pp : potentialPortals) {
-				Vector tempVec = new Vector(pp.getKeyBlock().getX(), pp.getKeyBlock().getY(), pp.getKeyBlock().getZ());
+				Vector tempVec = new Vector(pp.getKeyBlock().getX(),
+					pp.getKeyBlock().getY(), pp.getKeyBlock().getZ());
 				double tempDist = tempVec.distanceSquared(destVector);
 				// Need to do add'l checks here.
 				if (tempDist < minDistSquared) {
@@ -503,8 +510,16 @@ public class PortalUtil {
 		// Don't let the portal go into bedrock.
 		// Layer 6 for the portal, layer 5 for the obsidian
 		// Bedrock at layer 4 and below.
+		// Alternatively, in the Nether, layer 119 is the highest safe point
+		// for a portal keyblock to exist without accidentally nuking bedrock.
 		if (destY < 6) {
 			destY = 6;
+		}
+
+		if (destWorld.getEnvironment().equals(Environment.NETHER) &&
+			destY > 119) {
+
+			destY = 119;
 		}
 
 		destBlock = destWorld.getBlockAt((int)destX, (int)destY, (int)destZ);

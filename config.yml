@@ -1,5 +1,5 @@
 listen:
-    respawn: true 
+    respawn: true
 worlds:
     normalWorld: world
     netherWorld: netherWorld
@@ -7,3 +7,4 @@ scale:
     normal: 8
     nether: 1
 forceLoadRadius: 0
+forcePeacefulNether: false

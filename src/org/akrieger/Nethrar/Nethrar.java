@@ -9,6 +9,9 @@ import com.nijikokun.bukkit.Permissions.Permissions;
 
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
+import org.bukkit.entity.Ghast;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.PigZombie;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
@@ -33,6 +36,9 @@ import java.util.logging.Logger;
 public class Nethrar extends JavaPlugin {
 
 	public static PermissionHandler permissions;
+
+	private final NethrarEntityListener entityListener =
+		new NethrarEntityListener();
 
 	private final NethrarPlayerListener playerListener =
 		new NethrarPlayerListener();
@@ -88,16 +94,25 @@ public class Nethrar extends JavaPlugin {
 		log.info("[NETHRAR] Normal : Nether scale: "
 			+ normalScale + ":" + netherScale);
 
-		log.info("[NETHRAR] Forcing chunks to stay loaded in a radius of " +
-			keepAliveRadius + " around portals.");
-
 		if (keepAliveRadius > 0) {
 			pm.registerEvent(Event.Type.CHUNK_UNLOAD, worldListener,
 				Priority.Normal, this);
+
+			log.info("[NETHRAR] Forcing chunks to stay loaded in a radius of " +
+				keepAliveRadius + " around portals.");
 		}
 
 		PortalUtil.initialize(normalWorld, netherWorld,
 			normalScale, netherScale, keepAliveRadius);
+
+		if (getConfiguration().getBoolean("forcePeacefulNether", false)) {
+			clearNetherCreatures(netherWorld);
+
+			pm.registerEvent(Event.Type.CREATURE_SPAWN, entityListener,
+				Priority.Normal, this);
+
+			log.info("[NETHRAR] Forcing 'peaceful' Nether.");
+		}
 
 		PluginDescriptionFile pdfFile = this.getDescription();
 		log.info("[NETHRAR] " + pdfFile.getName() + " v" +
@@ -113,6 +128,16 @@ public class Nethrar extends JavaPlugin {
 				log.info("[NETHRAR] Permissions enabled.");
 			} else {
 				log.info("[NETHRAR] Permissions not detected.");
+			}
+		}
+	}
+
+	private void clearNetherCreatures(World w) {
+		for (LivingEntity le : w.getLivingEntities()) {
+			if (le instanceof Ghast ||
+				le instanceof PigZombie) {
+
+				le.remove();
 			}
 		}
 	}
