@@ -47,6 +47,8 @@ public class Nethrar extends JavaPlugin {
 
 	private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
+	private int forceNetherNightTid = -1;
+
 	public void onEnable() {
 		Configuration c = getConfiguration();
 		PluginManager pm = getServer().getPluginManager();
@@ -73,7 +75,7 @@ public class Nethrar extends JavaPlugin {
 			log.info("[NETHRAR] Not listening for player respawns.");
 		}
 
-		String normalWorldName = getConfiguration().getString(
+		final String normalWorldName = getConfiguration().getString(
 		    "worlds.normalWorld", "world");
 		World normalWorld = getServer().getWorld(normalWorldName);
 
@@ -84,7 +86,7 @@ public class Nethrar extends JavaPlugin {
 			    normalWorldName, Environment.NORMAL);
 		}
 
-		String netherWorldName = getConfiguration().getString(
+		final String netherWorldName = getConfiguration().getString(
 		    "worlds.netherWorld", "netherWorld");
 		World netherWorld = getServer().getWorld(netherWorldName);
 
@@ -124,6 +126,29 @@ public class Nethrar extends JavaPlugin {
 			log.info("[NETHRAR] Forcing 'peaceful' Nether.");
 		} else {
 			((CraftWorld)netherWorld).getHandle().spawnMonsters = 1;
+		}
+
+		boolean forceNetherNight = c.getBoolean("forceNetherNight", true);
+
+		if (forceNetherNight) {
+			if (forceNetherNightTid == -1) {
+				forceNetherNightTid = getServer().getScheduler()
+												 .scheduleAsyncRepeatingTask(
+					this,
+					new Runnable() {
+						public void run() {
+							World nw = getServer().getWorld(netherWorldName);
+							if (nw != null) {
+								nw.setTime(14000);
+							}
+						}
+					}, 20L, 6000L);
+			}
+		} else {
+			if (forceNetherNightTid != -1) {
+				getServer().getScheduler().cancelTask(forceNetherNightTid);
+				forceNetherNightTid = -1;
+			}
 		}
 
 		c.setProperty("usePermissions", usePermissions);
