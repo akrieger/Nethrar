@@ -1,3 +1,4 @@
+usePermissions: false
 listen:
     respawn: true
 worlds:

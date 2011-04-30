@@ -7,6 +7,7 @@ package org.akrieger.Nethrar;
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
 
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
 import org.bukkit.entity.Ghast;
@@ -15,6 +16,7 @@ import org.bukkit.entity.PigZombie;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.util.config.Configuration;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 
@@ -37,9 +39,6 @@ public class Nethrar extends JavaPlugin {
 
 	public static PermissionHandler permissions;
 
-	private final NethrarEntityListener entityListener =
-		new NethrarEntityListener();
-
 	private final NethrarPlayerListener playerListener =
 		new NethrarPlayerListener();
 
@@ -49,17 +48,27 @@ public class Nethrar extends JavaPlugin {
 	private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
 	public void onEnable() {
-		setupPermissions();
-
+		Configuration c = getConfiguration();
 		PluginManager pm = getServer().getPluginManager();
+
+		boolean usePermissions = c.getBoolean("usePermissions", false);
+
+		if (usePermissions) {
+			log.info("[NETHRAR] Using Permissions. Set permission node "
+				+ "\"nethrar.use\" as appropriate.");
+			setupPermissions();
+		} else {
+			permissions = null;
+		}
 
 		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
 			Priority.Normal, this);
 
-		if (getConfiguration().getBoolean("listen.respawn", true)) {
+		boolean listenForRespawns = c.getBoolean("listen.respawn", true);
+
+		if (listenForRespawns) {
 			pm.registerEvent(Event.Type.PLAYER_RESPAWN, playerListener,
 				Priority.Normal, this);
-			log.info("[NETHRAR] Listening for player respawns.");
 		} else {
 			log.info("[NETHRAR] Not listening for player respawns.");
 		}
@@ -79,12 +88,12 @@ public class Nethrar extends JavaPlugin {
 		    "worlds.netherWorld", "netherWorld");
 		World netherWorld = getServer().getWorld(netherWorldName);
 
+		log.info("[NETHRAR] Nether world name: " + netherWorldName);
+
 		if (netherWorld == null) {
 			netherWorld = getServer().createWorld(
 			    netherWorldName, Environment.NETHER);
 		}
-
-		log.info("[NETHRAR] Nether world name: " + netherWorldName);
 
 		int normalScale, netherScale, keepAliveRadius;
 		normalScale = getConfiguration().getInt("scale.normal", 8);
@@ -105,14 +114,28 @@ public class Nethrar extends JavaPlugin {
 		PortalUtil.initialize(normalWorld, netherWorld,
 			normalScale, netherScale, keepAliveRadius);
 
-		if (getConfiguration().getBoolean("forcePeacefulNether", false)) {
+		boolean forcePeacefulNether = c.getBoolean("forcePeacefulNether", false);
+
+		if (forcePeacefulNether) {
+			((CraftWorld)netherWorld).getHandle().spawnMonsters = 0;
+
 			clearNetherCreatures(netherWorld);
 
-			pm.registerEvent(Event.Type.CREATURE_SPAWN, entityListener,
-				Priority.Normal, this);
-
 			log.info("[NETHRAR] Forcing 'peaceful' Nether.");
+		} else {
+			((CraftWorld)netherWorld).getHandle().spawnMonsters = 1;
 		}
+
+		c.setProperty("usePermissions", usePermissions);
+		c.setProperty("worlds.normalWorld", normalWorldName);
+		c.setProperty("worlds.netherWorld", netherWorldName);
+		c.setProperty("scale.normal", normalScale);
+		c.setProperty("scale.nether", netherScale);
+		c.setProperty("listen.respawn", listenForRespawns);
+		c.setProperty("forceLoadRadius", keepAliveRadius);
+		c.setProperty("forcePeacefulNether", forcePeacefulNether);
+
+		c.save();
 
 		PluginDescriptionFile pdfFile = this.getDescription();
 		log.info("[NETHRAR] " + pdfFile.getName() + " v" +
