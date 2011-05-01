@@ -1,3 +1,4 @@
+usePermissions: false
 listen:
     respawn: true
 worlds:
@@ -8,3 +9,4 @@ scale:
     nether: 1
 forceLoadRadius: 0
 forcePeacefulNether: false
+forceNetherNight: true

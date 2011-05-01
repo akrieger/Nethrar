@@ -5,6 +5,7 @@
 package org.akrieger.Nethrar;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -250,6 +251,15 @@ public class Portal {
 		Location dest;
 		dest = new Location(destWorld, destX, destY, destZ, destYaw, destPitch);
 
+		// Preload chunks.
+		Chunk destChunk = dest.getBlock().getChunk();
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				destWorld.loadChunk(destChunk.getX() + dx, destChunk.getZ() + dz);
+			}
+		}
+
+
 		// Bug: Player camera orientation not preserved when teleporting
 		// in a vehicle. Probably because vehicle takes over player
 		// camera.
@@ -299,11 +309,10 @@ public class Portal {
 			}
 			Bukkit.getServer().getPluginManager().callEvent(new NethrarVehicleTeleportEvent(oldV, newV));
 			oldV.remove();
-			return dest;
 		} else {
 			player.teleport(dest);
-			return dest; 
 		}
+		return dest;
 	}
 
 	/**

@@ -7,6 +7,7 @@ package org.akrieger.Nethrar;
 import com.nijiko.permissions.PermissionHandler;
 
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -42,7 +43,21 @@ public class NethrarPlayerListener extends PlayerListener {
 			b = event.getTo().getBlock();
 		} else {
 			// Turns out the player is in / at the block *under* the minecart.
-			b = player.getVehicle().getLocation().getBlock();
+			Vehicle v = player.getVehicle();
+			if (v == null) {
+				// Strange race condition has occured. Or server lag.
+				return;
+			}
+			Location l = v.getLocation();
+			if (l == null) {
+				// Even stranger race condition, or corruption.
+				return;
+			}
+			b = l.getBlock();
+			if (b == null) {
+				// What the hell.
+				return;
+			}
 		}
 
 		if (!b.getType().equals(Material.PORTAL)) {
