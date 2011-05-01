@@ -4,6 +4,8 @@
 
 package org.akrieger.Nethrar;
 
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Event;
 
@@ -13,6 +15,9 @@ import org.bukkit.event.Event;
  * Fires whenever a vehicle gets teleported between worlds, letting
  * plugins which modify vehicles closely (like Minecart Mania) catch
  * that and transfer data successfully.
+ *
+ * Also calls a NethrarMinecartTeleportEvent if the vehicle being
+ * teleported is a minecart.
  */
 public class NethrarVehicleTeleportEvent extends Event {
 
@@ -23,6 +28,10 @@ public class NethrarVehicleTeleportEvent extends Event {
 		super("NethrarVehicleTeleportEvent");
 		this.oldV = oldV;
 		this.newV = newV;
+
+		if (oldV instanceof Minecart) {
+			Bukkit.getServer().getPluginManager().callEvent(new NethrarMinecartTeleportEvent((Minecart)oldV, (Minecart)newV));
+		}
 	}
 
 	public Vehicle getOldV() {
