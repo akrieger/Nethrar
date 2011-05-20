@@ -379,6 +379,7 @@ public class PortalUtil {
 	public static Portal getCounterpartPortalFor(Portal source) {
 		World destWorld;
 
+		// Make this more general.
 		if (source.isInNether()) {
 			destWorld = getNormalWorld();
 		} else {
@@ -390,6 +391,7 @@ public class PortalUtil {
 		Block sourceKeyBlock = source.getKeyBlock();
 		Block destBlock;
 
+		// Generalize.
 		double scale = PortalUtil.getNormalScale() /
 			(double)PortalUtil.getNetherScale();
 
@@ -408,6 +410,7 @@ public class PortalUtil {
 		// detection rules. Heuristic is, essentially, "If I were to step into
 		// the other portal, and it would link to the one I am entering here,
 		// then link to that other portal."
+		// Generalize.
 		if ((scale > 1 && source.isInNether()) ||
 		    (scale < 1 && !source.isInNether())) {
 

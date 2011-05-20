@@ -74,13 +74,14 @@ public class Portal {
 	 *     the player.
 	 */
 	public Portal(Block b) {
-		if (b.getWorld().getEnvironment().equals(Environment.NORMAL)) {
+		if (b.getWorld().equals(PortalUtil.getNormalWorld())) {
 			this.inNether = false;
 		} else {
+			// Technically an error. Need to determine we're in the registered
+			// Nether world.
 			this.inNether = true;
 		}
 		keyBlock = b;
-		PortalUtil.addPortal(this);
 		this.facingNorth = b.getWorld()
 		                    .getBlockAt(b.getX(), b.getY(), b.getZ() - 1)
 		                    .getType().equals(Material.PORTAL) ||
@@ -89,6 +90,7 @@ public class Portal {
 		                    .getType().equals(Material.PORTAL);
 
 		counterpart = null;
+		PortalUtil.addPortal(this);
 	}
 	
 	/** Returns the keyblock for this Portal. */

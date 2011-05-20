@@ -17,6 +17,8 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 
+import java.util.logging.Logger;
+
 /**
  * PlayerListener object for the Portals plugin.
  *
@@ -27,6 +29,8 @@ import org.bukkit.World.Environment;
  * @author Andrew Krieger
  */
 public class NethrarPlayerListener extends PlayerListener {
+	private final Logger log = Logger.getLogger("Minecraft.Nethrar");
+
 	public NethrarPlayerListener() { }
 
 	@Override
@@ -74,6 +78,21 @@ public class NethrarPlayerListener extends PlayerListener {
 
 	@Override
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
+		Location rl = event.getRespawnLocation();
+		if (rl == null) {
+			log.warning("[NETHRAR] Player died, but respawn event has no respawn location.");
+			return;
+		}
+
+		World rw = rl.getWorld();
+		if (rw == null) {
+			log.warning("[NETHRAR] Player died, respawn event has a location, but the location has no world.");
+			return;
+		}
+		if (PortalUtil.getNetherWorld() == null) {
+			log.severe("[NETHRAR] No Nether world configured in Nethrar.");
+			return;
+		}
 		if (event.getRespawnLocation().getWorld().equals(
 				PortalUtil.getNetherWorld())) {
 

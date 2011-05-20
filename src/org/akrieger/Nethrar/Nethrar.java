@@ -23,6 +23,7 @@ import org.bukkit.World.Environment;
 import org.bukkit.plugin.*;
 
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Plugin main class.
@@ -52,6 +53,19 @@ public class Nethrar extends JavaPlugin {
 	public void onEnable() {
 		Configuration c = getConfiguration();
 		PluginManager pm = getServer().getPluginManager();
+
+		int debugLevel = c.getInt("debugLevel", 0);
+
+		switch (debugLevel) {
+			case 2:
+				log.setLevel(Level.INFO);
+				break;
+			case 1:
+				log.setLevel(Level.WARNING);
+				break;
+			default:
+				log.setLevel(Level.SEVERE);
+		}
 
 		boolean usePermissions = c.getBoolean("usePermissions", false);
 
@@ -116,7 +130,8 @@ public class Nethrar extends JavaPlugin {
 		PortalUtil.initialize(normalWorld, netherWorld,
 			normalScale, netherScale, keepAliveRadius);
 
-		boolean forcePeacefulNether = c.getBoolean("forcePeacefulNether", false);
+		boolean forcePeacefulNether =
+			c.getBoolean("forcePeacefulNether", false);
 
 		if (forcePeacefulNether) {
 			((CraftWorld)netherWorld).getHandle().spawnMonsters = 0;
@@ -144,6 +159,7 @@ public class Nethrar extends JavaPlugin {
 						}
 					}, 20L, 6000L);
 			}
+			log.info("[NETHRAR] Forcing night in Nether.");
 		} else {
 			if (forceNetherNightTid != -1) {
 				getServer().getScheduler().cancelTask(forceNetherNightTid);
@@ -159,6 +175,7 @@ public class Nethrar extends JavaPlugin {
 		c.setProperty("listen.respawn", listenForRespawns);
 		c.setProperty("forceLoadRadius", keepAliveRadius);
 		c.setProperty("forcePeacefulNether", forcePeacefulNether);
+		c.setProperty("debugLevel", debugLevel);
 
 		c.save();
 
