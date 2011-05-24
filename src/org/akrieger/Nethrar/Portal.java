@@ -12,12 +12,14 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Minecart;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Portal class implementation.
@@ -65,6 +67,8 @@ public class Portal {
 	private boolean inNether;
 	private boolean facingNorth;
 	private Block keyBlock;
+
+	private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
 	/**
 	 * Constructs a Portal for the portal at the passed in keyblock.
@@ -257,15 +261,27 @@ public class Portal {
 			}
 		}
 
-		// Bug: Player camera orientation not preserved when teleporting in a
-		// minecart. Probably because minecart takes over player camera. 
-		// Todo: Spawn a boat if necessary, vs. always spawning minecarts.
+
+		// Bug: Player camera orientation not preserved when teleporting
+		// in a vehicle. Probably because vehicle takes over player
+		// camera.
 		if (player.isInsideVehicle()) {
-			Minecart oldV = (Minecart)player.getVehicle();
+			Vehicle oldV = player.getVehicle();
 			player.leaveVehicle();
-			Minecart newV = destWorld.spawnMinecart(dest);
+
+			Vehicle newV = null;
+			if (oldV instanceof Minecart) {
+				newV = destWorld.spawnMinecart(dest);
+			} else if (oldV instanceof Boat) {
+				newV = destWorld.spawnBoat(dest);
+			} else {
+				log.warning("Player tried to take an unsupported vehicle through a portal.");
+			}
+
 			player.teleport(dest);
-			newV.setPassenger(player);
+			if (newV != null) {
+				newV.setPassenger(player);
+			}
 			Vector oldVelocity = oldV.getVelocity();
 			Vector newVelocity;
 			switch (rotateVehicleVelocity) {
@@ -288,8 +304,12 @@ public class Portal {
 					newVelocity = oldVelocity;
 					break;
 			}
-			newV.setVelocity(newVelocity);
-			Bukkit.getServer().getPluginManager().callEvent(new NethrarMinecartTeleportEvent(oldV, newV));
+			if (newV != null) {
+				newV.setVelocity(newVelocity);
+			} else {
+				player.setVelocity(newVelocity);
+			}
+			Bukkit.getServer().getPluginManager().callEvent(new NethrarVehicleTeleportEvent(oldV, newV));
 			oldV.remove();
 		} else {
 			player.teleport(dest);
