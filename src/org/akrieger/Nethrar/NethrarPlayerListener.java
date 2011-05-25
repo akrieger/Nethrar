@@ -6,6 +6,8 @@ package org.akrieger.Nethrar;
 
 import com.nijiko.permissions.PermissionHandler;
 
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.player.PlayerListener;
@@ -15,7 +17,6 @@ import org.bukkit.block.Block;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.World.Environment;
 
 import java.util.logging.Logger;
 
@@ -37,7 +38,7 @@ public class NethrarPlayerListener extends PlayerListener {
 	public void onPlayerMove(PlayerMoveEvent event) {
 		Block b;
 		Player player = event.getPlayer();
-		
+
 		if (Nethrar.permissions != null &&
 			!Nethrar.permissions.has(player, "nethrar.use")) {
 			return;
@@ -46,31 +47,16 @@ public class NethrarPlayerListener extends PlayerListener {
 		if (!event.getPlayer().isInsideVehicle()) {
 			b = event.getTo().getBlock();
 		} else {
-			// Turns out the player is in / at the block *under* the minecart.
-			Vehicle v = player.getVehicle();
-			if (v == null) {
-				// Strange race condition has occured. Or server lag.
-				return;
-			}
-			Location l = v.getLocation();
-			if (l == null) {
-				// Even stranger race condition, or corruption.
-				return;
-			}
-			b = l.getBlock();
-			if (b == null) {
-				// What the hell.
-				return;
-			}
+			b = event.getTo().getBlock().getFace(BlockFace.UP);
 		}
 
 		if (!b.getType().equals(Material.PORTAL)) {
 			// Not a portal.
 			return;
 		}
-		
+
 		Portal portal = PortalUtil.getPortalAt(b);
-		Location endpoint = portal.teleportPlayer(player);
+		Location endpoint = portal.teleport(player);
 		if (endpoint != null) {
 			event.setTo(endpoint);
 		}
@@ -89,16 +75,9 @@ public class NethrarPlayerListener extends PlayerListener {
 			log.warning("[NETHRAR] Player died, respawn event has a location, but the location has no world.");
 			return;
 		}
-		if (PortalUtil.getNetherWorld() == null) {
-			log.severe("[NETHRAR] No Nether world configured in Nethrar.");
-			return;
-		}
-		if (event.getRespawnLocation().getWorld().equals(
-				PortalUtil.getNetherWorld())) {
-
-			World normalWorld = PortalUtil.getNormalWorld();
-
-			event.setRespawnLocation(normalWorld.getSpawnLocation());
+		World respawnWorld = PortalUtil.getRespawnWorldFor(event.getRespawnLocation().getWorld());
+		if (respawnWorld != null) {
+			event.setRespawnLocation(respawnWorld.getSpawnLocation());
 		}
 	}
 }

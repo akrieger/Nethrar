@@ -11,9 +11,11 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Boat;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.StorageMinecart;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.util.Vector;
 
@@ -25,7 +27,7 @@ import java.util.logging.Logger;
  * Portal class implementation.
  *
  * This class provides a representation of a two-way portal between worlds.
- * Portals are responsible for teleporting players, self-checking for physical
+ * Portals are responsible for teleporting entities, self-checking for physical
  * validity, determining counterpart location, and keeping track of the
  * counterpart.
  *
@@ -34,26 +36,26 @@ import java.util.logging.Logger;
 public class Portal {
 
 	/*
-	 * The keyBlock is the portal keyBlock with the most negative coordinates. In
-	 * the case of a portal in the YZ plane (enter facing east/west), this is
+	 * The keyBlock is the portal keyBlock with the most negative coordinates.
+	 * In the case of a portal in the YZ plane (enter facing east/west), this is
 	 * the most north, bottom, keyBlock. In the case of a portal in the XZ plane
 	 * (enter facing north/west), this is the more east, bottom, keyBlock.
 	 *
 	 * When facing west and looking into a portal, this is the coordinate of the
-	 * bottom-right portal keyBlock, of the bottom-right corner of the face nearer
-	 * to the player. When facing north into a portal, this is the coordinate of
-	 * the same portal keyBlock, and still the bottom-right corner, but the other
-	 * side of the portal from the player.
+	 * bottom-right portal keyBlock, of the bottom-right corner of the face
+	 * nearer to the entity. When facing north into a portal, this is the
+	 * coordinate of the same portal keyBlock, and still the bottom-right
+	 * corner, but the other side of the portal from the entity.
 	 *
-	 * So, when a player enters a portal, we get a triplet of coordinates, which
-	 * tell us which portal keyBlock the player entered. This is the keyBlock coord
-	 * of the player's *feet*.
+	 * So, when an entity enters a portal, we get a triplet of coordinates,
+	 * which tell us which portal keyBlock the entity entered. This is the
+	 * keyBlock coord of the entity's *feet*.
 	 *
 	 * To determine the canonical portal location, take the location we are
-	 * given (which may be a middle or bottom keyBlock, depending, but never a top
-	 * keyBlock unless hax are employed), check the keyBlocks in the more negative
-	 * directions until they are non-portal. Then we know we found the keyBlock we
-	 * need to index by.
+	 * given (which may be a middle or bottom keyBlock, depending, but never a
+	 * top keyBlock unless hax are employed), check the keyBlocks in the more
+	 * negative directions until they are non-portal. Then we know we found the
+	 * keyBlock we need to index by.
 	 */
 
 	/*
@@ -64,7 +66,6 @@ public class Portal {
 	 */
 
 	private Portal counterpart;
-	private boolean inNether;
 	private boolean facingNorth;
 	private Block keyBlock;
 
@@ -78,13 +79,6 @@ public class Portal {
 	 *     the player.
 	 */
 	public Portal(Block b) {
-		if (b.getWorld().equals(PortalUtil.getNormalWorld())) {
-			this.inNether = false;
-		} else {
-			// Technically an error. Need to determine we're in the registered
-			// Nether world.
-			this.inNether = true;
-		}
 		keyBlock = b;
 		this.facingNorth = b.getWorld()
 		                    .getBlockAt(b.getX(), b.getY(), b.getZ() - 1)
@@ -115,11 +109,6 @@ public class Portal {
 		return this.facingNorth;
 	}
 
-	/** Returns whether this Portal is in the Nether. */
-	public boolean isInNether() {
-		return this.inNether;
-	}
-
 	/** Returns the counterpart Portal for this Portal. */
 	public Portal getCounterpart() {
 		return this.counterpart;
@@ -143,21 +132,21 @@ public class Portal {
 	}
 
 	/**
-	 * Teleports the passed in Player through the portal.
+	 * Teleports the passed in Entity through the portal.
 	 *
-	 * Given a Player object, attempts to teleport them through the portal.
+	 * Given an Entity object, attempts to teleport them through the portal.
 	 * This involves many steps.
 	 * 1) Verify the portal on the other end still exists. If it doesn't,
 	 *    mark this as such.
 	 * 2) If there is no counterpart, figure out where it would be, and get it.
 	 *    This may involve generating and placing a portal into the world.
 	 * 3) Assuming we now have a counterpart, figure out where to teleport the
-	 *    player to.
-	 *    3a) Figure out the player's position relative to the entry portal.
+	 *    entity to.
+	 *    3a) Figure out the entity's position relative to the entry portal.
 	 *    3b) Translate this to a position relative to the exit portal.
-	 *    3c) Preserve the player's camera's orientation relative to the portal.
-	 * 4) Teleport the player.
-	 *    4a) If the player is in a vehicle, we do a dance.
+	 *    3c) Preserve the entity's camera's orientation relative to the portal.
+	 * 4) Teleport the entity.
+	 *    4a) If the entity is a Player in a vehicle, we do a dance.
 	 *        - Raise the destination by 1 (vehicles have to 'fall' into the
 	 *        portal to avoid losing momentum, so they should be one higher).
 	 *        - Make the player leave the vehicle.
@@ -168,11 +157,11 @@ public class Portal {
 	 *        old vehicle.
 	 *        - Remove the old vehicle.
 	 *
-	 * @param player The player to teleport.
-	 * @return The location the player was teleported to, or null if the
-	 *     player was not teleported.
+	 * @param e The entity to teleport.
+	 * @return The location the entity was teleported to, or null if the
+	 *     entity was not teleported.
 	 */
-	public Location teleportPlayer(Player player) {
+	public Location teleport(Entity e) {
 		if (this.counterpart != null) {
 			if (!this.counterpart.isValid()) {
 				PortalUtil.removePortal(this.counterpart);
@@ -192,7 +181,7 @@ public class Portal {
 		float destPitch, destYaw;
 		int rotateVehicleVelocity = 0;
 
-		Vector offset = player.getLocation().toVector().subtract(
+		Vector offset = e.getLocation().toVector().subtract(
 		    this.keyBlock.getLocation().toVector());
 
 		Vector finalOffset;
@@ -207,10 +196,10 @@ public class Portal {
 			}
 
 			if (this.counterpart.isFacingNorth()) {
-				destYaw = player.getLocation().getYaw();
+				destYaw = e.getLocation().getYaw();
 				finalOffset = offset;
 			} else {
-				destYaw = player.getLocation().getYaw() - 90;
+				destYaw = e.getLocation().getYaw() - 90;
 				finalOffset = new Vector(offset.getZ(), offset.getY(), -offset.getX() + 1);
 				rotateVehicleVelocity = 1;
 			}
@@ -223,11 +212,11 @@ public class Portal {
 				offset.setZ(offset.getZ() - 1);
 			}
 			if (this.counterpart.isFacingNorth()) {
-				destYaw = player.getLocation().getYaw() + 90;
+				destYaw = e.getLocation().getYaw() + 90;
 				finalOffset = new Vector(-offset.getZ() + 1, offset.getY(), offset.getX());
 				rotateVehicleVelocity = 2;
 			} else {
-				destYaw = player.getLocation().getYaw();
+				destYaw = e.getLocation().getYaw();
 				finalOffset = offset;
 			}
 		}
@@ -238,11 +227,12 @@ public class Portal {
 		destY = this.counterpart.getKeyBlock().getY() + finalOffset.getY();
 		destZ = this.counterpart.getKeyBlock().getZ() + finalOffset.getZ();
 
-		destPitch = player.getLocation().getPitch();
+		destPitch = e.getLocation().getPitch();
 
 		// Jitter the location just a bit so the resulting minecart doesn't
-		// end up underground.
-		if (player.isInsideVehicle()) {
+		// end up underground, if there is a minecart being teleported.
+		if (e instanceof Player && ((Player)e).isInsideVehicle()
+			|| e instanceof Vehicle) {
 			// +.11 is necessary to get a minecart to spawn on top of, instead
 			// of inside, rails on the same level on the other side. However,
 			// if there are *not* rails on the other side, then the minecart
@@ -261,27 +251,40 @@ public class Portal {
 			}
 		}
 
-
 		// Bug: Player camera orientation not preserved when teleporting
 		// in a vehicle. Probably because vehicle takes over player
 		// camera.
-		if (player.isInsideVehicle()) {
-			Vehicle oldV = player.getVehicle();
-			player.leaveVehicle();
+		Vehicle oldV = null, newV = null;
+		if (e instanceof Player) {
+			if (((Player)e).isInsideVehicle()) {
+				oldV = ((Player)e).getVehicle();
+				((Player)e).leaveVehicle();
+			}
+			e.teleport(dest);
+		} else if (e instanceof StorageMinecart ||
+			e instanceof Minecart ||
+			e instanceof Boat) {
 
-			Vehicle newV = null;
-			if (oldV instanceof Minecart) {
+			oldV = ((Vehicle)e);
+		}
+
+		if (oldV != null) {
+			if (oldV instanceof StorageMinecart) {
+				newV = destWorld.spawnStorageMinecart(dest);
+				((StorageMinecart)newV).getInventory().setContents(
+					((StorageMinecart)oldV).getInventory().getContents());
+			} else if (oldV instanceof Minecart) {
 				newV = destWorld.spawnMinecart(dest);
 			} else if (oldV instanceof Boat) {
 				newV = destWorld.spawnBoat(dest);
 			} else {
-				log.warning("Player tried to take an unsupported vehicle through a portal.");
+				log.warning("[NETHRAR] Unsupported vehicle attempted a portal.");
 			}
 
-			player.teleport(dest);
-			if (newV != null) {
-				newV.setPassenger(player);
+			if (newV != null && e instanceof Player) {
+				newV.setPassenger(e);
 			}
+
 			Vector oldVelocity = oldV.getVelocity();
 			Vector newVelocity;
 			switch (rotateVehicleVelocity) {
@@ -306,13 +309,9 @@ public class Portal {
 			}
 			if (newV != null) {
 				newV.setVelocity(newVelocity);
-			} else {
-				player.setVelocity(newVelocity);
 			}
 			Bukkit.getServer().getPluginManager().callEvent(new NethrarVehicleTeleportEvent(oldV, newV));
 			oldV.remove();
-		} else {
-			player.teleport(dest);
 		}
 		return dest;
 	}

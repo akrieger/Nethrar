@@ -36,11 +36,13 @@ import java.util.Set;
 public class PortalUtil {
 
 	private static Map<Location, Portal> portals;
+	private static Map<World, World> worldLinks;
+	private static Map<World, World> respawnRedirects;
+	private static Map<World, Integer> worldScales;
 	// Map of chunks, encoded in a Location object, and a list of portals
 	// keeping that chunk loaded.
 	private static Map<Location, List<Portal>> forceLoadedChunks;
-	private static World normalWorld, netherWorld;
-	private static int normalScale, netherScale, keepAliveRadius;
+	private static int keepAliveRadius;
 
 	private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
@@ -67,11 +69,15 @@ public class PortalUtil {
 			int newKeepAliveRadius) {
 
 		portals = new HashMap<Location, Portal>();
+		worldLinks = new HashMap<World, World>();
+		respawnRedirects = new HashMap<World, World>();
+		worldScales = new HashMap<World, Integer>();
 		forceLoadedChunks = new HashMap<Location, List<Portal>>();
-		normalWorld = newNormalWorld;
-		netherWorld = newNetherWorld;
-		normalScale = newNormalScale;
-		netherScale = newNetherScale;
+		worldLinks.put(newNormalWorld, newNetherWorld);
+		worldLinks.put(newNetherWorld, newNormalWorld);
+		respawnRedirects.put(newNetherWorld, newNormalWorld);
+		worldScales.put(newNormalWorld, newNormalScale);
+		worldScales.put(newNetherWorld, newNetherScale);
 		keepAliveRadius = newKeepAliveRadius;
 
 		return true;
@@ -128,6 +134,26 @@ public class PortalUtil {
 		return removePortal(temp);
 	}
 
+	public static int getScaleFor(World w) {
+		Integer scale = worldScales.get(w);
+		if (scale != null) {
+			return scale;
+		}
+		return 0; 
+	}
+
+	public static World getRespawnWorldFor(World sourceWorld) {
+		return respawnRedirects.get(sourceWorld);
+	}
+
+	public static World getDestWorldFor(Portal p) {
+		return getDestWorldFor(p.getKeyBlock().getWorld());
+	}
+
+	public static World getDestWorldFor(World sourceWorld) {
+		return worldLinks.get(sourceWorld);
+	}
+
 	/** 
 	 * Gets the Portal at the given Location, or null if there is none.
 	 * The Location need not be the keyBlock location, but it must be one of
@@ -135,32 +161,6 @@ public class PortalUtil {
 	 */
 	public static Portal getPortalAt(Location loc) {
 		return getPortalAt(loc.getBlock());
-	}
-
-	/** Returns the normal world from the most recent initialization. */
-	public static World getNormalWorld() {
-		return normalWorld;
-	}
-
-	/** Returns the nether world from the most recent initialization. */
-	public static World getNetherWorld() {
-		return netherWorld;
-	}
-
-	/**
-	 * Returns the scale for the normal world from the most recent
-	 * initialization.
-	 */
-	public static int getNormalScale() {
-		return normalScale;
-	}
-
-	/**
-	 * Returns the scale for the nether world from the most recent
-	 * initialization.
-	 */
-	public static int getNetherScale() {
-		return netherScale;
 	}
 
 	/**
@@ -377,33 +377,19 @@ public class PortalUtil {
 	}
 
 	public static Portal getCounterpartPortalFor(Portal source) {
-		World destWorld;
-
-		// Make this more general.
-		if (source.isInNether()) {
-			destWorld = getNormalWorld();
-		} else {
-			destWorld = getNetherWorld();
-		}
+		World destWorld = getDestWorldFor(source);
 
 		// Calculate the counterpart portal's keyblock location.
 		double destX, destY, destZ;
 		Block sourceKeyBlock = source.getKeyBlock();
 		Block destBlock;
 
-		// Generalize.
-		double scale = PortalUtil.getNormalScale() /
-			(double)PortalUtil.getNetherScale();
+		double scale = PortalUtil.getScaleFor(destWorld) /
+			(double)PortalUtil.getScaleFor(sourceKeyBlock.getWorld());
 
-		if (source.isInNether()) {
-			destX = Math.floor(sourceKeyBlock.getX() * scale);
-			destY = sourceKeyBlock.getY();
-			destZ = Math.floor(sourceKeyBlock.getZ() * scale);
-		} else {
-			destX = Math.floor(sourceKeyBlock.getX() / scale);
-			destY = sourceKeyBlock.getY();
-			destZ = Math.floor(sourceKeyBlock.getZ() / scale);
-		}
+		destX = Math.floor(sourceKeyBlock.getX() * scale);
+		destY = sourceKeyBlock.getY();
+		destZ = Math.floor(sourceKeyBlock.getZ() * scale);
 
 		// If the destination world is 'larger', then we need to 'look around'
 		// more to find potential portals to link to, based on collision
@@ -411,13 +397,7 @@ public class PortalUtil {
 		// the other portal, and it would link to the one I am entering here,
 		// then link to that other portal."
 		// Generalize.
-		if ((scale > 1 && source.isInNether()) ||
-		    (scale < 1 && !source.isInNether())) {
-
-			if (scale < 1) {
-				scale = PortalUtil.getNetherScale() /
-					(double)PortalUtil.getNormalScale();
-			}
+		if (scale > 1) {
 
 			/*
 			 * The following diagrams define the 'macrogrid' area to search for

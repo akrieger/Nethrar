@@ -10,4 +10,4 @@ scale:
 forceLoadRadius: 0
 forcePeacefulNether: false
 forceNetherNight: true
-debug: false
+debug: 0

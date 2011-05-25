@@ -43,6 +43,9 @@ public class Nethrar extends JavaPlugin {
 	private final NethrarPlayerListener playerListener =
 		new NethrarPlayerListener();
 
+	private final NethrarVehicleListener vehicleListener =
+		new NethrarVehicleListener();
+
 	private final NethrarWorldListener worldListener =
 		new NethrarWorldListener();
 
@@ -56,17 +59,6 @@ public class Nethrar extends JavaPlugin {
 
 		int debugLevel = c.getInt("debugLevel", 0);
 
-		switch (debugLevel) {
-			case 2:
-				log.setLevel(Level.INFO);
-				break;
-			case 1:
-				log.setLevel(Level.WARNING);
-				break;
-			default:
-				log.setLevel(Level.SEVERE);
-		}
-
 		boolean usePermissions = c.getBoolean("usePermissions", false);
 
 		if (usePermissions) {
@@ -79,6 +71,15 @@ public class Nethrar extends JavaPlugin {
 
 		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
 			Priority.Normal, this);
+
+		boolean riderlessVehicles = c.getBoolean("riderlessVehicles", true);
+
+		if (riderlessVehicles) {
+			pm.registerEvent(Event.Type.VEHICLE_MOVE, vehicleListener,
+				Priority.Normal, this);
+		} else {
+			log.info("[NETHRAR] Not allowing riderless vehicles to teleport.");
+		}
 
 		boolean listenForRespawns = c.getBoolean("listen.respawn", true);
 
@@ -125,6 +126,11 @@ public class Nethrar extends JavaPlugin {
 
 			log.info("[NETHRAR] Forcing chunks to stay loaded in a radius of " +
 				keepAliveRadius + " around portals.");
+		} else if (riderlessVehicles) {
+			log.warning("[NETHRAR] Riderless vehicles are enabled, but no " +
+				"forceLoadRadius was defined.");
+			log.warning("[NETHRAR] For best results, you should " +
+				"set at least a radius of 2.");
 		}
 
 		PortalUtil.initialize(normalWorld, netherWorld,
@@ -168,6 +174,7 @@ public class Nethrar extends JavaPlugin {
 		}
 
 		c.setProperty("usePermissions", usePermissions);
+		c.setProperty("riderlessVehicles", riderlessVehicles);
 		c.setProperty("worlds.normalWorld", normalWorldName);
 		c.setProperty("worlds.netherWorld", netherWorldName);
 		c.setProperty("scale.normal", normalScale);
@@ -182,6 +189,17 @@ public class Nethrar extends JavaPlugin {
 		PluginDescriptionFile pdfFile = this.getDescription();
 		log.info("[NETHRAR] " + pdfFile.getName() + " v" +
 			pdfFile.getVersion() + " enabled.");
+
+		switch (debugLevel) {
+			case 2:
+				log.setLevel(Level.INFO);
+				break;
+			case 1:
+				log.setLevel(Level.WARNING);
+				break;
+			default:
+				log.setLevel(Level.SEVERE);
+		}
 	}
 
 	private void setupPermissions() {
