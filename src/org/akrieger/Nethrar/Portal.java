@@ -260,14 +260,6 @@ public class Portal {
 				oldV = ((Player)e).getVehicle();
 				((Player)e).leaveVehicle();
 			}
-			final Location threadDest = dest;
-			final Player threadPlayer = (Player)e;
-			PortalUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(PortalUtil.getPlugin(),
-				new Runnable() {
-					public void run() {
-					threadPlayer.teleport(threadDest);
-				}
-			});
 		} else if (e instanceof StorageMinecart ||
 			e instanceof Minecart ||
 			e instanceof Boat) {
@@ -288,10 +280,6 @@ public class Portal {
 				log.warning("[NETHRAR] Unsupported vehicle attempted a portal.");
 			}
 
-			if (newV != null && e instanceof Player) {
-				newV.setPassenger(e);
-			}
-
 			Vector oldVelocity = oldV.getVelocity();
 			Vector newVelocity;
 			switch (rotateVehicleVelocity) {
@@ -300,25 +288,50 @@ public class Portal {
 					// In a north-facing portal, out a west-facing portal.
 					// Rotate 90 degrees counterclockwise.
 					newVelocity = new Vector(oldVelocity.getZ(),
-					                         oldVelocity.getY(),
-					                         oldVelocity.getX() * -1);
+											 oldVelocity.getY(),
+											 oldVelocity.getX() * -1);
 					break;
 				case 2:
 					// In a west-facing portal, out a north-facing portal.
 					// Rotate 90 degrees clockwise.
 					newVelocity = new Vector(oldVelocity.getZ() * -1,
-					                         oldVelocity.getY(),
-					                         oldVelocity.getX());
+											 oldVelocity.getY(),
+											 oldVelocity.getX());
 					break;
 				default:
 					newVelocity = oldVelocity;
 					break;
 			}
-			if (newV != null) {
-				newV.setVelocity(newVelocity);
-			}
-			Bukkit.getServer().getPluginManager().callEvent(new NethrarVehicleTeleportEvent(oldV, newV));
-			oldV.remove();
+			final Location threadDest = dest;
+			final Entity threadE = e;
+			final Vehicle threadOldV = oldV;
+			final Vehicle threadNewV = newV;
+			final Vector threadNewVelocity = newVelocity;
+			PortalUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(PortalUtil.getPlugin(),
+				new Runnable() {
+					public void run() {
+						if (threadE instanceof Player) {
+							((Player)threadE).teleport(threadDest);
+						}
+						if (threadNewV != null && threadE instanceof Player) {
+							threadNewV.setPassenger(threadE);
+						}
+						if (threadNewV != null) {
+							threadNewV.setVelocity(threadNewVelocity);
+						}
+						Bukkit.getServer().getPluginManager().callEvent(new NethrarVehicleTeleportEvent(threadOldV, threadNewV));
+						threadOldV.remove();
+					}
+				});
+		} else {
+			final Location threadDest = dest;
+			final Entity threadE = e;
+			PortalUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(PortalUtil.getPlugin(),
+				new Runnable() {
+					public void run() {
+						((Player)threadE).teleport(threadDest);
+					}
+				});
 		}
 		return dest;
 	}
