@@ -3,11 +3,11 @@ listen:
     respawn: true
 worlds:
     normalWorld: world
-    netherWorld: netherWorld
+    netherWorld: world_nether
 scale:
     normal: 8
     nether: 1
 forceLoadRadius: 0
 forcePeacefulNether: false
-forceNetherNight: true
+forceNetherNight: false
 debug: 0

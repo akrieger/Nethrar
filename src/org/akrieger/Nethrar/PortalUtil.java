@@ -11,6 +11,7 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.Set;
  */
 public class PortalUtil {
 
+	private static Plugin plugin;
 	private static Map<Location, Portal> portals;
 	private static Map<World, World> worldLinks;
 	private static Map<World, World> respawnRedirects;
@@ -64,10 +66,11 @@ public class PortalUtil {
 	 *     normal world's scale.
 	 * @return true
 	 */
-	public static boolean initialize(World newNormalWorld,
+	public static boolean initialize(Plugin pl, World newNormalWorld,
 			World newNetherWorld, int newNormalScale, int newNetherScale,
 			int newKeepAliveRadius) {
 
+		plugin = pl;
 		portals = new HashMap<Location, Portal>();
 		worldLinks = new HashMap<World, World>();
 		respawnRedirects = new HashMap<World, World>();
@@ -81,6 +84,10 @@ public class PortalUtil {
 		keepAliveRadius = newKeepAliveRadius;
 
 		return true;
+	}
+
+	public static Plugin getPlugin() {
+		return plugin;
 	}
 
 	/**
@@ -378,6 +385,10 @@ public class PortalUtil {
 
 	public static Portal getCounterpartPortalFor(Portal source) {
 		World destWorld = getDestWorldFor(source);
+		if (destWorld == null) {
+			// No outbound edge defined.
+			return null;
+		}
 
 		// Calculate the counterpart portal's keyblock location.
 		double destX, destY, destZ;

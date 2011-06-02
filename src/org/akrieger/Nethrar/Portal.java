@@ -260,7 +260,14 @@ public class Portal {
 				oldV = ((Player)e).getVehicle();
 				((Player)e).leaveVehicle();
 			}
-			e.teleport(dest);
+			final Location threadDest = dest;
+			final Player threadPlayer = (Player)e;
+			PortalUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(PortalUtil.getPlugin(),
+				new Runnable() {
+					public void run() {
+					threadPlayer.teleport(threadDest);
+				}
+			});
 		} else if (e instanceof StorageMinecart ||
 			e instanceof Minecart ||
 			e instanceof Boat) {

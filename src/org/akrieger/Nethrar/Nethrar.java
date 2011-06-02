@@ -13,14 +13,13 @@ import org.bukkit.event.Event;
 import org.bukkit.entity.Ghast;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.PigZombie;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
-
-import org.bukkit.plugin.*;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -133,7 +132,7 @@ public class Nethrar extends JavaPlugin {
 				"set at least a radius of 2.");
 		}
 
-		PortalUtil.initialize(normalWorld, netherWorld,
+		PortalUtil.initialize(this, normalWorld, netherWorld,
 			normalScale, netherScale, keepAliveRadius);
 
 		boolean forcePeacefulNether =
