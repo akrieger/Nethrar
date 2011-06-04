@@ -311,7 +311,16 @@ public class Portal {
 				new Runnable() {
 					public void run() {
 						if (threadE instanceof Player) {
-							((Player)threadE).teleport(threadDest);
+							if (((Player)threadE).teleport(threadDest)) {
+								World destWorld = threadE.getLocation().getWorld();
+								Chunk destChunk = threadE.getLocation().getBlock().getChunk();
+								int x = destChunk.getX(), z = destChunk.getZ();
+								for (int dx = -1; dx <= 1; dx++) {
+									for (int dz = -1; dz <= 1; dz++) {
+										destWorld.refreshChunk(x + dx, z + dz);
+									}
+								}
+							}
 						}
 						if (threadNewV != null && threadE instanceof Player) {
 							threadNewV.setPassenger(threadE);
@@ -329,7 +338,16 @@ public class Portal {
 			PortalUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(PortalUtil.getPlugin(),
 				new Runnable() {
 					public void run() {
-						((Player)threadE).teleport(threadDest);
+						if (((Player)threadE).teleport(threadDest)) {
+							World destWorld = threadE.getLocation().getWorld();
+							Chunk destChunk = threadE.getLocation().getBlock().getChunk();
+							int x = destChunk.getX(), z = destChunk.getZ();
+							for (int dx = -1; dx <= 1; dx++) {
+								for (int dz = -1; dz <= 1; dz++) {
+									destWorld.refreshChunk(x + dx, z + dz);
+								}
+							}
+						}
 					}
 				});
 		}

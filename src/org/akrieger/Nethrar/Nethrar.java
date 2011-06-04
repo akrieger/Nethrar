@@ -53,6 +53,8 @@ public class Nethrar extends JavaPlugin {
 	private int forceNetherNightTid = -1;
 
 	public void onEnable() {
+
+		log.setLevel(Level.INFO);
 		Configuration c = getConfiguration();
 		PluginManager pm = getServer().getPluginManager();
 
