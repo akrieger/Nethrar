@@ -30,55 +30,55 @@ import java.util.logging.Logger;
  * @author Andrew Krieger
  */
 public class NethrarPlayerListener extends PlayerListener {
-	private final Logger log = Logger.getLogger("Minecraft.Nethrar");
+    private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
-	public NethrarPlayerListener() { }
+    public NethrarPlayerListener() { }
 
-	@Override
-	public void onPlayerMove(PlayerMoveEvent event) {
-		Block b;
-		Player player = event.getPlayer();
+    @Override
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Block b;
+        Player player = event.getPlayer();
 
-		if (Nethrar.permissions != null &&
-			!Nethrar.permissions.has(player, "nethrar.use")) {
-			return;
-		}
+        if (Nethrar.permissions != null &&
+            !Nethrar.permissions.has(player, "nethrar.use")) {
+            return;
+        }
 
-		if (!event.getPlayer().isInsideVehicle()) {
-			b = event.getTo().getBlock();
-		} else {
-			b = event.getTo().getBlock().getFace(BlockFace.UP);
-		}
+        if (!event.getPlayer().isInsideVehicle()) {
+            b = event.getTo().getBlock();
+        } else {
+            b = event.getTo().getBlock().getFace(BlockFace.UP);
+        }
 
-		if (!b.getType().equals(Material.PORTAL)) {
-			// Not a portal.
-			return;
-		}
+        if (!b.getType().equals(Material.PORTAL)) {
+            // Not a portal.
+            return;
+        }
 
-		Portal portal = PortalUtil.getPortalAt(b);
-		Location endpoint = portal.teleport(player);
-		if (endpoint != null) {
-			// Need Bukkit to fix move too fast error first
-			//event.setTo(endpoint);
-		}
-	}
+        Portal portal = PortalUtil.getPortalAt(b);
+        Location endpoint = portal.teleport(player);
+        if (endpoint != null) {
+            // Need Bukkit to fix move too fast error first
+            //event.setTo(endpoint);
+        }
+    }
 
-	@Override
-	public void onPlayerRespawn(PlayerRespawnEvent event) {
-		Location rl = event.getRespawnLocation();
-		if (rl == null) {
-			log.warning("[NETHRAR] Player died, but respawn event has no respawn location.");
-			return;
-		}
+    @Override
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Location rl = event.getRespawnLocation();
+        if (rl == null) {
+            log.warning("[NETHRAR] Player died, but respawn event has no respawn location.");
+            return;
+        }
 
-		World rw = rl.getWorld();
-		if (rw == null) {
-			log.warning("[NETHRAR] Player died, respawn event has a location, but the location has no world.");
-			return;
-		}
-		World respawnWorld = PortalUtil.getRespawnWorldFor(event.getRespawnLocation().getWorld());
-		if (respawnWorld != null) {
-			event.setRespawnLocation(respawnWorld.getSpawnLocation());
-		}
-	}
+        World rw = rl.getWorld();
+        if (rw == null) {
+            log.warning("[NETHRAR] Player died, respawn event has a location, but the location has no world.");
+            return;
+        }
+        World respawnWorld = PortalUtil.getRespawnWorldFor(event.getRespawnLocation().getWorld());
+        if (respawnWorld != null) {
+            event.setRespawnLocation(respawnWorld.getSpawnLocation());
+        }
+    }
 }

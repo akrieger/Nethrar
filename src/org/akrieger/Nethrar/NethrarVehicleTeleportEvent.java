@@ -21,24 +21,24 @@ import org.bukkit.event.Event;
  */
 public class NethrarVehicleTeleportEvent extends Event {
 
-	private Vehicle oldV;
-	private Vehicle newV;
+    private Vehicle oldV;
+    private Vehicle newV;
 
-	public NethrarVehicleTeleportEvent(Vehicle oldV, Vehicle newV) {
-		super("NethrarVehicleTeleportEvent");
-		this.oldV = oldV;
-		this.newV = newV;
+    public NethrarVehicleTeleportEvent(Vehicle oldV, Vehicle newV) {
+        super("NethrarVehicleTeleportEvent");
+        this.oldV = oldV;
+        this.newV = newV;
 
-		if (oldV instanceof Minecart) {
-			Bukkit.getServer().getPluginManager().callEvent(new NethrarMinecartTeleportEvent((Minecart)oldV, (Minecart)newV));
-		}
-	}
+        if (oldV instanceof Minecart) {
+            Bukkit.getServer().getPluginManager().callEvent(new NethrarMinecartTeleportEvent((Minecart)oldV, (Minecart)newV));
+        }
+    }
 
-	public Vehicle getOldV() {
-		return this.oldV;
-	}
+    public Vehicle getOldV() {
+        return this.oldV;
+    }
 
-	public Vehicle getNewV() {
-		return this.newV;
-	}
+    public Vehicle getNewV() {
+        return this.newV;
+    }
 }

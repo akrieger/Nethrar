@@ -19,13 +19,13 @@ import org.bukkit.event.world.WorldListener;
  * @author Andrew Krieger
  */
 public class NethrarWorldListener extends WorldListener {
-	public NethrarWorldListener() { }
+    public NethrarWorldListener() { }
 
-	@Override
-	public void onChunkUnload(ChunkUnloadEvent event) {
-		Chunk c = event.getChunk();
-		if (PortalUtil.isChunkForcedLoaded(c)) {
-			event.setCancelled(true);
-		}
-	}
+    @Override
+    public void onChunkUnload(ChunkUnloadEvent event) {
+        Chunk c = event.getChunk();
+        if (PortalUtil.isChunkForcedLoaded(c)) {
+            event.setCancelled(true);
+        }
+    }
 }

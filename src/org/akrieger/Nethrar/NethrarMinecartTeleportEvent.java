@@ -16,20 +16,20 @@ import org.bukkit.event.Event;
  */
 public class NethrarMinecartTeleportEvent extends Event {
 
-	private Minecart oldCart;
-	private Minecart newCart;
+    private Minecart oldCart;
+    private Minecart newCart;
 
-	public NethrarMinecartTeleportEvent(Minecart oldCart, Minecart newCart) {
-		super("NethrarMinecartTeleportEvent");
-		this.oldCart = oldCart;
-		this.newCart = newCart;
-	}
+    public NethrarMinecartTeleportEvent(Minecart oldCart, Minecart newCart) {
+        super("NethrarMinecartTeleportEvent");
+        this.oldCart = oldCart;
+        this.newCart = newCart;
+    }
 
-	public Minecart getOldCart() {
-		return this.oldCart;
-	}
+    public Minecart getOldCart() {
+        return this.oldCart;
+    }
 
-	public Minecart getNewCart() {
-		return this.newCart;
-	}
+    public Minecart getNewCart() {
+        return this.newCart;
+    }
 }
