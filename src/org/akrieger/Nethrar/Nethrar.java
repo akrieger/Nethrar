@@ -7,6 +7,8 @@ package org.akrieger.Nethrar;
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
 
+import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
@@ -18,9 +20,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.util.config.Configuration;
-import org.bukkit.World;
-import org.bukkit.World.Environment;
 
+import java.io.File;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -50,12 +51,12 @@ public class Nethrar extends JavaPlugin {
 
     private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
-    private int forceNetherNightTid = -1;
-
     public void onEnable() {
-
         log.setLevel(Level.INFO);
         Configuration c = getConfiguration();
+        Configuration worldConfig = new Configuration(
+            new File(getDataFolder(), "worlds.yml"));
+        worldConfig.load();
         PluginManager pm = getServer().getPluginManager();
 
         int debugLevel = c.getInt("debugLevel", 0);
@@ -91,35 +92,8 @@ public class Nethrar extends JavaPlugin {
             log.info("[NETHRAR] Not listening for player respawns.");
         }
 
-        final String normalWorldName = getConfiguration().getString(
-            "worlds.normalWorld", "world");
-        World normalWorld = getServer().getWorld(normalWorldName);
-
-        log.info("[NETHRAR] Normal world name: " + normalWorldName);
-
-        if (normalWorld == null) {
-            normalWorld = getServer().createWorld(
-                normalWorldName, Environment.NORMAL);
-        }
-
-        final String netherWorldName = getConfiguration().getString(
-            "worlds.netherWorld", "netherWorld");
-        World netherWorld = getServer().getWorld(netherWorldName);
-
-        log.info("[NETHRAR] Nether world name: " + netherWorldName);
-
-        if (netherWorld == null) {
-            netherWorld = getServer().createWorld(
-                netherWorldName, Environment.NETHER);
-        }
-
-        int normalScale, netherScale, keepAliveRadius;
-        normalScale = getConfiguration().getInt("scale.normal", 8);
-        netherScale = getConfiguration().getInt("scale.nether", 1);
+        int keepAliveRadius;
         keepAliveRadius = getConfiguration().getInt("forceLoadRadius", 0);
-
-        log.info("[NETHRAR] Normal : Nether scale: "
-            + normalScale + ":" + netherScale);
 
         if (keepAliveRadius > 0) {
             pm.registerEvent(Event.Type.CHUNK_UNLOAD, worldListener,
@@ -134,55 +108,12 @@ public class Nethrar extends JavaPlugin {
                 "set at least a radius of 2.");
         }
 
-        PortalUtil.initialize(this, normalWorld, netherWorld,
-            normalScale, netherScale, keepAliveRadius);
-
-        boolean forcePeacefulNether =
-            c.getBoolean("forcePeacefulNether", false);
-
-        if (forcePeacefulNether) {
-            ((CraftWorld)netherWorld).getHandle().spawnMonsters = 0;
-
-            clearNetherCreatures(netherWorld);
-
-            log.info("[NETHRAR] Forcing 'peaceful' Nether.");
-        } else {
-            ((CraftWorld)netherWorld).getHandle().spawnMonsters = 1;
-        }
-
-        boolean forceNetherNight = c.getBoolean("forceNetherNight", true);
-
-        if (forceNetherNight) {
-            if (forceNetherNightTid == -1) {
-                forceNetherNightTid = getServer().getScheduler()
-                                                 .scheduleAsyncRepeatingTask(
-                    this,
-                    new Runnable() {
-                        public void run() {
-                            World nw = getServer().getWorld(netherWorldName);
-                            if (nw != null) {
-                                nw.setTime(14000);
-                            }
-                        }
-                    }, 20L, 6000L);
-            }
-            log.info("[NETHRAR] Forcing night in Nether.");
-        } else {
-            if (forceNetherNightTid != -1) {
-                getServer().getScheduler().cancelTask(forceNetherNightTid);
-                forceNetherNightTid = -1;
-            }
-        }
+        PortalUtil.initialize(this, worldConfig, keepAliveRadius);
 
         c.setProperty("usePermissions", usePermissions);
         c.setProperty("riderlessVehicles", riderlessVehicles);
-        c.setProperty("worlds.normalWorld", normalWorldName);
-        c.setProperty("worlds.netherWorld", netherWorldName);
-        c.setProperty("scale.normal", normalScale);
-        c.setProperty("scale.nether", netherScale);
         c.setProperty("listen.respawn", listenForRespawns);
         c.setProperty("forceLoadRadius", keepAliveRadius);
-        c.setProperty("forcePeacefulNether", forcePeacefulNether);
         c.setProperty("debugLevel", debugLevel);
 
         c.save();

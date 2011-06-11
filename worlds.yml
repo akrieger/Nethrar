@@ -1,0 +1,10 @@
+world:
+        environment: normal
+        destination: world_nether
+        scale: 8
+        respawnTo: true
+world_nether:
+        environment: nether
+        destination: world
+        scale: 1
+        peaceful: false

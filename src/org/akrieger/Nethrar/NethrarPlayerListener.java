@@ -65,7 +65,7 @@ public class NethrarPlayerListener extends PlayerListener {
 
     @Override
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        Location rl = event.getRespawnLocation();
+        Location rl = event.getPlayer().getLocation();
         if (rl == null) {
             log.warning("[NETHRAR] Player died, but respawn event has no respawn location.");
             return;
