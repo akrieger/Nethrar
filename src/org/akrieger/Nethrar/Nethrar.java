@@ -147,17 +147,14 @@ public class Nethrar extends JavaPlugin {
         }
     }
 
-    private void clearNetherCreatures(World w) {
-        for (LivingEntity le : w.getLivingEntities()) {
-            if (le instanceof Ghast ||
-                le instanceof PigZombie) {
-
-                le.remove();
-            }
+    public void onDisable() {
+        if (PortalUtil.savePortals()) {
+            log.info("[NETHRAR] Portal saving successful.");
+        } else {
+            log.severe("[NETHRAR] Unable to save portals. All links will be " +
+                "broken on reload.");
         }
     }
-
-    public void onDisable() { }
 
     public void onLoad() { }
 }

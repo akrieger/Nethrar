@@ -18,6 +18,8 @@ import org.bukkit.util.config.ConfigurationNode;
 import org.bukkit.util.Vector;
 
 import java.io.File;
+import java.lang.IllegalArgumentException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -70,17 +72,20 @@ public class PortalUtil {
      *     normal world's scale.
      * @return true
      */
-    public static boolean initialize(Plugin pl, Configuration worldConfig,
+    public static boolean initialize(Plugin pl, Configuration worldsConfig,
             int newKeepAliveRadius) {
 
         plugin = pl;
-        initializeWorlds(worldConfig);
+        keepAliveRadius = newKeepAliveRadius;
+        forceLoadedChunks = new HashMap<Location, List<Portal>>();
+
+        initializeWorlds(worldsConfig);
+
         Configuration portalsConfig = new Configuration(
             new File(plugin.getDataFolder(), "portals.yml"));
         portalsConfig.load();
         initializePortals(portalsConfig);
-        forceLoadedChunks = new HashMap<Location, List<Portal>>();
-        keepAliveRadius = newKeepAliveRadius;
+
 
         return true;
     }
@@ -90,65 +95,213 @@ public class PortalUtil {
         worldLinks = new HashMap<World, World>();
         worldScales = new HashMap<World, Integer>();
         respawnRedirects = new HashMap<World, World>();
+
         List<String> worldNames = worldsConfig.getKeys(null);
-        if (worldNames != null) {
-            // Validate and generate worlds.
-            for (String worldName : worldNames) {
-                ConfigurationNode worldConfig = worldsConfig.getNode(worldName);
-                String envtype = worldConfig.getString("environment", "");
-                Environment env;
-                if (envtype.equals("")) {
-                    envtype = "normal";
-                    env = Environment.NORMAL;
-                } else {
-                    try {
-                        env = Environment.valueOf(envtype.toUpperCase());
-                    } catch (IllegalArgumentException e) {
-                        log.warning("[NETHRAR] Illegal environment " + envtype +
-                            " specified. Defaulting to normal.");
-                        envtype = "normal";
-                        env = Environment.NORMAL;
-                    }
+
+        if (worldNames == null) {
+            // Generate defaults.
+            List<World> worlds = plugin.getServer().getWorlds();
+            World normalWorld = null;
+            for (World w : worlds) {
+                if (w.getEnvironment().equals(Environment.NORMAL)) {
+                    normalWorld = w;
+                    break;
+                }
+            }
+
+            if (normalWorld == null) {
+                // Ok, not getting more defensive than this. If they made
+                // 'world' be a non-normal world, sucks to be them.
+                normalWorld = plugin.getServer().createWorld(
+                    "world", Environment.NORMAL);
+            }
+
+            worlds = plugin.getServer().getWorlds();
+            World netherWorld = null;
+
+            for (World w : worlds) {
+                if (w.getEnvironment().equals(Environment.NETHER)) {
+                    netherWorld = w;
+                    break;
+                }
+            }
+
+            if (netherWorld == null) {
+                // Ok, not getting more defensive than this. If they made
+                // $WORLD_nether' be a non-nether world, sucks to be them.
+                netherWorld = plugin.getServer().createWorld(
+                    normalWorld.getName() + "_nether",
+                    Environment.NETHER);
+            }
+
+            worldLinks.put(normalWorld, netherWorld);
+            worldLinks.put(netherWorld, normalWorld);
+            respawnRedirects.put(netherWorld, normalWorld);
+            worldScales.put(normalWorld, 8);
+            worldScales.put(netherWorld, 1);
+
+            String normalName = normalWorld.getName();
+            String netherName = netherWorld.getName();
+
+            worldsConfig.setProperty(normalName + ".environment", "normal");
+            worldsConfig.setProperty(normalName + ".destination", netherName);
+            worldsConfig.setProperty(normalName + ".scale", 8);
+            worldsConfig.setProperty(normalName + ".respawnTo", true);
+
+            worldsConfig.setProperty(netherName + ".enviroment", "nether");
+            worldsConfig.setProperty(netherName + ".destination", normalName);
+            worldsConfig.setProperty(netherName + ".scale", 1);
+            worldsConfig.setProperty(netherName + ".peaceful", false);
+            worldsConfig.save();
+            return;
+        }
+
+        // Validate and generate worlds.
+        for (String worldName : worldNames) {
+            ConfigurationNode worldConfig = worldsConfig.getNode(worldName);
+            String envtype = worldConfig.getString("environment", "");
+            Environment env;
+            World world;
+
+            if (envtype.equals("")) {
+                world = plugin.getServer().getWorld(worldName);
+                if (world == null) {
+                    log.severe("[NETHRAR] World \"" + worldName + "\" " +
+                        "does not exist, and does not have an environment " +
+                        "set. Please set \"" + worldName + ".environment\" " +
+                        "in worlds.yml.");
+                }
+                throw new IllegalArgumentException("Need to set an " +
+                    "environment for world " + worldName + ", or create the " +
+                    "world through some means.");
+            } else {
+                try {
+                    env = Environment.valueOf(envtype.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    log.severe("[NETHRAR] Illegal environment " + envtype +
+                        " specified for world " + worldName + ".");
+                    throw new IllegalArgumentException("Need to set a valid " +
+                        "environment for world " + worldName);
                 }
 
-                World world = plugin.getServer().getWorld(worldName);
+                world = plugin.getServer().getWorld(worldName);
                 if (world == null) {
                     world = plugin.getServer().createWorld(worldName, env);
                 } else if(!world.getEnvironment().equals(env)) {
                     log.warning("[NETHRAR] World \"" + worldName + "\" " +
                         "already exists, but is the wrong enviroment. Either " +
-                        "remove the world's directory, or change the " + 
-                        "enviroment in the configuration file.");
+                        "remove the world's directory, or change the " +
+                        "environment in the configuration file.");
                 }
-                if (worldConfig.getBoolean("peaceful", false)) {
-                    ((CraftWorld)world).getHandle().spawnMonsters = 0;
-                } else {
-                    ((CraftWorld)world).getHandle().spawnMonsters = 1;
-                }
-                int scale = worldConfig.getInt("scale", 1);
-                worldScales.put(world, scale);
-
-                String destWorldName = worldConfig.getString("destination", "");
-                tempWorldLinks.put(world, destWorldName);
-                log.info("[NETHRAR] World \"" + worldName + "\", environment " +
-                    envtype + ", scale " + scale + ".");
             }
-            // Link worlds and set up metadata.
-            log.info("[NETHRAR] World graph:");
-            for (String worldName : worldNames) {
-                World world = plugin.getServer().getWorld(worldName);
-                World destWorld = plugin.getServer().getWorld(tempWorldLinks.get(world));
-                worldLinks.put(world, destWorld);
-                log.info(world.getName() + " --> " + destWorld.getName());
-                if (worldsConfig.getBoolean(worldName + ".respawnTo", false)) {
-                    respawnRedirects.put(destWorld, world);
-                }
+
+            if (worldConfig.getBoolean("peaceful", false)) {
+                ((CraftWorld)world).getHandle().spawnMonsters = 0;
+            } else {
+                ((CraftWorld)world).getHandle().spawnMonsters = 1;
+            }
+
+            int scale = worldConfig.getInt("scale", 1);
+            worldScales.put(world, scale);
+
+            String destWorldName = worldConfig.getString("destination", "");
+            tempWorldLinks.put(world, destWorldName);
+            log.info("[NETHRAR] World \"" + worldName + "\", environment " +
+                envtype + ", scale " + scale + ".");
+        }
+
+        // Link worlds and set up metadata.
+        log.info("[NETHRAR] World graph:");
+        for (String worldName : worldNames) {
+            World world = plugin.getServer().getWorld(worldName);
+            World destWorld = plugin.getServer().getWorld(
+                tempWorldLinks.get(world));
+            worldLinks.put(world, destWorld);
+            log.info(world.getName() + " --> " + destWorld.getName());
+            if (worldsConfig.getBoolean(worldName + ".respawnTo", false)) {
+                respawnRedirects.put(destWorld, world);
             }
         }
     }
 
     private static void initializePortals(Configuration portalConfig) {
         portals = new HashMap<Location, Portal>();
+        Map<String, Portal> namesToPortals = new HashMap<String, Portal>();
+        List<String> portalKeys = portalConfig.getKeys(null);
+
+        if (portals == null) {
+            return;
+        }
+
+        for (String portalKey : portalKeys) {
+            String worldName = portalKey.substring(
+                0, portalKey.lastIndexOf(";"));
+
+            ConfigurationNode config = portalConfig.getNode(portalKey);
+
+            List<Integer> coords = config.getIntList("keyblock", null);
+            if (coords == null) {
+                continue;
+            }
+
+            World portalWorld = plugin.getServer().getWorld(worldName);
+            if (portalWorld == null) {
+                continue;
+            }
+
+            Block keyBlock = portalWorld.getBlockAt(
+                coords.get(0), coords.get(1), coords.get(2));
+            Portal p = getPortalAt(keyBlock);
+            if (p == null) {
+                continue;
+            }
+
+            portals.put(p.getKeyBlock().getLocation(), p);
+            namesToPortals.put(portalKey, p);
+        }
+        for (String portalKey : portalKeys) {
+            ConfigurationNode config = portalConfig.getNode(portalKey);
+            String destKey = config.getString("destination");
+
+            Portal source = namesToPortals.get(portalKey);
+            if (source == null) {
+                continue;
+            }
+            source.setCounterpart(namesToPortals.get(destKey));
+        }
+    }
+
+    public static boolean savePortals() {
+        Configuration portalConfig = new Configuration(
+            new File(plugin.getDataFolder(), "portals.yml"));
+
+        return savePortals(portalConfig);
+    }
+
+    private static boolean savePortals(Configuration portalConfig) {
+        int nonce = 0;
+        Map<Portal, String> portalKeyMap = new HashMap<Portal, String>();
+
+        for (Map.Entry<Location, Portal> ent : portals.entrySet()) {
+            Portal p = ent.getValue();
+            World w = p.getKeyBlock().getWorld();
+            portalKeyMap.put(p, w.getName() + ";" + (nonce++));
+        }
+
+        for (Map.Entry<Location, Portal> ent : portals.entrySet()) {
+            Portal p = ent.getValue();
+            Location l = p.getKeyBlock().getLocation();
+
+            String portalKey = portalKeyMap.get(p);
+            String destKey = portalKeyMap.get(p.getCounterpart());
+
+            int x = l.getBlockX(), y = l.getBlockY(), z = l.getBlockZ();
+            List<Integer> locCoords = Arrays.asList(x, y, z);
+
+            portalConfig.setProperty(portalKey + ".keyblock", locCoords);
+            portalConfig.setProperty(portalKey + ".destination", destKey);
+        }
+        return portalConfig.save();
     }
 
     public static Plugin getPlugin() {
@@ -457,7 +610,12 @@ public class PortalUtil {
     }
 
     public static Portal getCounterpartPortalFor(Portal source) {
-        World destWorld = getDestWorldFor(source);
+        return getCounterpartPortalFor(source, getDestWorldFor(source));
+    }
+
+    public static Portal getCounterpartPortalFor(
+            Portal source, World destWorld) {
+
         if (destWorld == null) {
             // No outbound edge defined.
             return null;
