@@ -256,7 +256,7 @@ public class PortalUtil {
                 continue;
             }
 
-            portals.put(p.getKeyBlock().getLocation(), p);
+            addPortal(p);
             namesToPortals.put(portalKey, p);
         }
         for (String portalKey : portalKeys) {
@@ -311,13 +311,44 @@ public class PortalUtil {
     /**
      * "Registers" the Portal with the mod, and performs relevant global
      * initialization based on the new Portal.
+     *
+     * Note that this does not add chunks to the keep-alive set.
      */
     public static boolean addPortal(Portal p) {
+        if (keepAliveRadius > 0) {
+            World w = p.getKeyBlock().getWorld();
+            int chunkX = p.getKeyBlock().getChunk().getX();
+            int chunkZ = p.getKeyBlock().getChunk().getZ();
+            for (int x = chunkX - keepAliveRadius + 1,
+                endx = chunkX + keepAliveRadius - 1; x <= endx; x++) {
+
+                for (int z = chunkZ - keepAliveRadius + 1,
+                    endz = chunkZ + keepAliveRadius - 1; z <= endz; z++) {
+
+                    Location tempLoc = new Location(w, x, 0, z);
+                    List<Portal> tempList = forceLoadedChunks.get(tempLoc);
+                    if (tempList == null) {
+                        tempList = new LinkedList<Portal>();
+                        tempList.add(p);
+                        forceLoadedChunks.put(tempLoc, tempList);
+                        w.loadChunk(x, z);
+                    } else {
+                        tempList.add(p);
+                    }
+                }
+            }
+        }
+        Portal oldPortal = portals.get(p.getKeyBlock().getLocation());
+        if (oldPortal != null) {
+            removePortal(oldPortal);
+        }
         return portals.put(p.getKeyBlock().getLocation(), p) != null;
     }
 
     /**
      * Removes the given Portal, and updates mappings accordingly.
+     *
+     * This will remove any necessary chunks from the keep-alive list.
      */
     public static boolean removePortal(Portal p) {
         Block b = p.getKeyBlock();
@@ -349,6 +380,9 @@ public class PortalUtil {
                     }
                 }
             }
+        }
+        if(p.getCounterpart() != null) {
+            p.getCounterpart().setCounterpart(null);
         }
         return portals.remove(b.getLocation()) != null;
     }
@@ -431,31 +465,10 @@ public class PortalUtil {
 
         if (newPortal == null) {
             // Newly entered portal.
+            // This is the only place Portals are "new'd".
             newPortal = new Portal(b.getWorld()
                                           .getBlockAt(keyX, keyY, keyZ));
-            // This is the only place Portals are "new'd".
-            if (keepAliveRadius > 0) {
-                int chunkX = newPortal.getKeyBlock().getChunk().getX();
-                int chunkZ = newPortal.getKeyBlock().getChunk().getZ();
-                for (int x = chunkX - keepAliveRadius + 1,
-                    endx = chunkX + keepAliveRadius - 1; x <= endx; x++) {
-
-                    for (int z = chunkZ - keepAliveRadius + 1,
-                        endz = chunkZ + keepAliveRadius - 1; z <= endz; z++) {
-
-                        Location tempLoc = new Location(bWorld, x, 0, z);
-                        List<Portal> tempList = forceLoadedChunks.get(tempLoc);
-                        if (tempList == null) {
-                            tempList = new LinkedList<Portal>();
-                            tempList.add(newPortal);
-                            forceLoadedChunks.put(tempLoc, tempList);
-                            bWorld.loadChunk(x, z);
-                        } else {
-                            tempList.add(newPortal);
-                        }
-                    }
-                }
-            }
+            addPortal(newPortal);
         }
         return newPortal;
     }
