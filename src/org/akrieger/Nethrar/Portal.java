@@ -88,7 +88,6 @@ public class Portal {
                             .getType().equals(Material.PORTAL);
 
         counterpart = null;
-        PortalUtil.addPortal(this);
     }
 
     /** Returns the keyblock for this Portal. */
@@ -375,20 +374,45 @@ public class Portal {
      */
     public boolean isValid() {
         Set<Block> portalBlocks = new HashSet<Block>();
+        Set<Block> frameBlocks = new HashSet<Block>();
         Block testBlock = this.keyBlock;
+        World testWorld = testBlock.getWorld();
         int testX = testBlock.getX(), testY = testBlock.getY(),
             testZ = testBlock.getZ();
+
+        if (this.facingNorth) {
+            for (int dz = 0; dz <= 1; dz++) {
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX, testY - 1, testZ + dz));
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX, testY + 3, testZ + dz));
+            }
+        } else {
+            for (int dx = 0; dx <= 1; dx++) {
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX + dx, testY - 1, testZ));
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX + dx, testY + 3, testZ));
+            }
+        }
 
         for (int dy = 0; dy <= 2; dy++) {
             portalBlocks.add(testBlock.getWorld().getBlockAt(
                 testX, testY + dy, testZ));
             if (this.facingNorth) {
-                portalBlocks.add(testBlock.getWorld().getBlockAt(
+                portalBlocks.add(testWorld.getBlockAt(
                     testX, testY + dy, testZ + 1));
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX, testY + dy, testZ + 2));
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX, testY + dy, testZ - 1));
             } else {
-                portalBlocks.add(testBlock.getWorld().getBlockAt(
+                portalBlocks.add(testWorld.getBlockAt(
                     testX + 1, testY + dy, testZ));
-
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX + 2, testY + dy, testZ));
+                frameBlocks.add(testWorld.getBlockAt(
+                    testX - 1, testY + dy, testZ));
             }
         }
 
@@ -396,6 +420,13 @@ public class Portal {
 
         for (Block tBlock : portalBlocks) {
             if (!tBlock.getType().equals(Material.PORTAL)) {
+                portalValid = false;
+                break;
+            }
+        }
+
+        for (Block tBlock : frameBlocks) {
+            if (!portalValid || !tBlock.getType().equals(Material.OBSIDIAN)) {
                 portalValid = false;
                 break;
             }

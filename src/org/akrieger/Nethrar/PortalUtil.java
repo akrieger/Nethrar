@@ -77,6 +77,10 @@ public class PortalUtil {
 
         plugin = pl;
         keepAliveRadius = newKeepAliveRadius;
+        portals = new HashMap<Location, Portal>();
+        worldLinks = new HashMap<World, World>();
+        worldScales = new HashMap<World, Integer>();
+        respawnRedirects = new HashMap<World, World>();
         forceLoadedChunks = new HashMap<Location, List<Portal>>();
 
         initializeWorlds(worldsConfig);
@@ -92,9 +96,6 @@ public class PortalUtil {
 
     private static void initializeWorlds(Configuration worldsConfig) {
         Map<World, String> tempWorldLinks = new HashMap<World, String>();
-        worldLinks = new HashMap<World, World>();
-        worldScales = new HashMap<World, Integer>();
-        respawnRedirects = new HashMap<World, World>();
 
         List<String> worldNames = worldsConfig.getKeys(null);
 
@@ -225,7 +226,6 @@ public class PortalUtil {
     }
 
     private static void initializePortals(Configuration portalConfig) {
-        portals = new HashMap<Location, Portal>();
         Map<String, Portal> namesToPortals = new HashMap<String, Portal>();
         List<String> portalKeys = portalConfig.getKeys(null);
 
@@ -468,7 +468,11 @@ public class PortalUtil {
             // This is the only place Portals are "new'd".
             newPortal = new Portal(b.getWorld()
                                           .getBlockAt(keyX, keyY, keyZ));
-            addPortal(newPortal);
+            if (newPortal.isValid()) {
+                addPortal(newPortal);
+            } else {
+                newPortal = null;
+            }
         }
         return newPortal;
     }

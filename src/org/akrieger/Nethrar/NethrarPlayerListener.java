@@ -56,10 +56,8 @@ public class NethrarPlayerListener extends PlayerListener {
         }
 
         Portal portal = PortalUtil.getPortalAt(b);
-        Location endpoint = portal.teleport(player);
-        if (endpoint != null) {
-            // Need Bukkit to fix move too fast error first
-            //event.setTo(endpoint);
+        if (portal != null) {
+            Location endpoint = portal.teleport(player);
         }
     }
 
