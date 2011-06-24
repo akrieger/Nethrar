@@ -3,3 +3,8 @@ author: Andrew Krieger
 description: Portals, now with minecart support!
 version: 1.5.1
 main: org.akrieger.Nethrar.Nethrar
+commands:
+    nethrar:
+        description: Accesses Nethrar functionality.
+        usage: |
+            /nethrar tp <world>

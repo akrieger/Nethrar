@@ -49,6 +49,9 @@ public class Nethrar extends JavaPlugin {
     private final NethrarWorldListener worldListener =
         new NethrarWorldListener();
 
+    private final NethrarCommandExecutor commandExecutor =
+        new NethrarCommandExecutor(this);
+
     private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
     public void onEnable() {
@@ -64,8 +67,8 @@ public class Nethrar extends JavaPlugin {
         boolean usePermissions = c.getBoolean("usePermissions", false);
 
         if (usePermissions) {
-            log.info("[NETHRAR] Using Permissions. Set permission node "
-                + "\"nethrar.use\" as appropriate.");
+            log.info("[NETHRAR] Using Permissions. Set permissions nodes as " +
+                "appropriate.");
             setupPermissions();
         } else {
             permissions = null;
@@ -73,6 +76,8 @@ public class Nethrar extends JavaPlugin {
 
         pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
             Priority.Normal, this);
+
+        getCommand("nethrar").setExecutor(commandExecutor);
 
         boolean riderlessVehicles = c.getBoolean("riderlessVehicles", true);
 
@@ -142,7 +147,7 @@ public class Nethrar extends JavaPlugin {
                 this.permissions = ((Permissions)test).getHandler();
                 log.info("[NETHRAR] Permissions enabled.");
             } else {
-                log.info("[NETHRAR] Permissions not detected.");
+                log.warning("[NETHRAR] Permissions not detected.");
             }
         }
     }

@@ -271,13 +271,13 @@ public class Portal {
 
         if (oldV != null) {
             if (oldV instanceof StorageMinecart) {
-                newV = destWorld.spawnStorageMinecart(dest);
+                newV = destWorld.spawn(dest, StorageMinecart.class);
                 ((StorageMinecart)newV).getInventory().setContents(
                     ((StorageMinecart)oldV).getInventory().getContents());
             } else if (oldV instanceof Minecart) {
-                newV = destWorld.spawnMinecart(dest);
+                newV = destWorld.spawn(dest, Minecart.class);
             } else if (oldV instanceof Boat) {
-                newV = destWorld.spawnBoat(dest);
+                newV = destWorld.spawn(dest, Boat.class);
             } else {
                 log.warning("[NETHRAR] Unsupported vehicle hit a portal.");
             }
