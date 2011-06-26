@@ -98,7 +98,7 @@ public class PortalUtil {
 
         List<String> worldNames = worldsConfig.getKeys(null);
 
-        if (worldNames == null) {
+        if (worldNames == null || worldNames.size() == 0) {
             // Generate defaults.
             List<World> worlds = plugin.getServer().getWorlds();
             World normalWorld = null;
@@ -147,7 +147,7 @@ public class PortalUtil {
             worldsConfig.setProperty(normalName + ".destination", netherName);
             worldsConfig.setProperty(normalName + ".scale", 8);
 
-            worldsConfig.setProperty(netherName + ".enviroment", "nether");
+            worldsConfig.setProperty(netherName + ".environment", "nether");
             worldsConfig.setProperty(netherName + ".destination", normalName);
             worldsConfig.setProperty(netherName + ".scale", 1);
             worldsConfig.setProperty(netherName + ".peaceful", false);
