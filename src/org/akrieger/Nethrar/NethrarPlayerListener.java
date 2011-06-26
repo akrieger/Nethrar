@@ -63,18 +63,21 @@ public class NethrarPlayerListener extends PlayerListener {
 
     @Override
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        Location rl = event.getPlayer().getLocation();
-        if (rl == null) {
-            log.warning("[NETHRAR] Player died, but respawn event has no respawn location.");
+        Location pl = event.getPlayer().getLocation();
+        if (pl == null) {
+            log.warning("[NETHRAR] Player died, but respawn event has no " +
+                "respawn location.");
             return;
         }
 
-        World rw = rl.getWorld();
-        if (rw == null) {
-            log.warning("[NETHRAR] Player died, respawn event has a location, but the location has no world.");
+        World pw = pl.getWorld();
+        if (pw == null) {
+            log.warning("[NETHRAR] Player died, respawn event has a " +
+                "location, but the location has no world.");
             return;
         }
-        World respawnWorld = PortalUtil.getRespawnWorldFor(event.getRespawnLocation().getWorld());
+
+        World respawnWorld = PortalUtil.getRespawnWorldFor(pw);
         if (respawnWorld != null) {
             event.setRespawnLocation(respawnWorld.getSpawnLocation());
         }

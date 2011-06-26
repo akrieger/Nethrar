@@ -2,4 +2,5 @@ usePermissions: false
 listen:
     respawn: true
 forceLoadRadius: 0
+riderlessVehicles: false
 debugLevel: 0

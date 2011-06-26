@@ -4,18 +4,17 @@ OBJ_DIR=bin
 SRC_DIR=src
 BUKKIT_API=../include/bukkit-0.0.1-SNAPSHOT.jar
 PERMISSIONS_API=../include/Permissions.jar
-CRAFTBUKKIT=../include/craftbukkit-0.0.1-SNAPSHOT.jar
 JAR=$(PLUGIN).jar
 
 include sources.mk
 
 SRCS_FULL=$(addprefix $(SRC_DIR)/,$(SRCS))
 
-JAVACFLAGS = -d $(OBJ_DIR) -cp $(BUKKIT_API):$(PERMISSIONS_API):$(CRAFTBUKKIT)
+JAVACFLAGS = -d $(OBJ_DIR) -cp $(BUKKIT_API):$(PERMISSIONS_API)
 
 $(JAR): $(SRCS_FULL)
 	mkdir -p $(OBJ_DIR)
-	javac $(JAVACFLAGS) $(SRCS_FULL) 
+	javac $(JAVACFLAGS) $(SRCS_FULL)
 	cp plugin.yml $(OBJ_DIR)
 	cd $(OBJ_DIR) && jar cvf $(PROJ_ROOT)/$(JAR) *
 

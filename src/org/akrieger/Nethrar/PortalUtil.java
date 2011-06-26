@@ -10,7 +10,6 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.config.Configuration;
@@ -147,12 +146,12 @@ public class PortalUtil {
             worldsConfig.setProperty(normalName + ".environment", "normal");
             worldsConfig.setProperty(normalName + ".destination", netherName);
             worldsConfig.setProperty(normalName + ".scale", 8);
-            worldsConfig.setProperty(normalName + ".respawnTo", true);
 
             worldsConfig.setProperty(netherName + ".enviroment", "nether");
             worldsConfig.setProperty(netherName + ".destination", normalName);
             worldsConfig.setProperty(netherName + ".scale", 1);
             worldsConfig.setProperty(netherName + ".peaceful", false);
+            worldsConfig.setProperty(netherName + ".respawnTo", normalName);
             worldsConfig.save();
             return;
         }
@@ -196,11 +195,8 @@ public class PortalUtil {
                 }
             }
 
-            if (worldConfig.getBoolean("peaceful", false)) {
-                ((CraftWorld)world).getHandle().spawnMonsters = 0;
-            } else {
-                ((CraftWorld)world).getHandle().spawnMonsters = 1;
-            }
+            boolean peaceful = worldConfig.getBoolean("peaceful", false);
+            world.setSpawnFlags(!peaceful, true);
 
             int scale = worldConfig.getInt("scale", 1);
             worldScales.put(world, scale);
@@ -219,9 +215,21 @@ public class PortalUtil {
                 tempWorldLinks.get(world));
             worldLinks.put(world, destWorld);
             log.info(world.getName() + " --> " + destWorld.getName());
-            if (worldsConfig.getBoolean(worldName + ".respawnTo", false)) {
-                respawnRedirects.put(destWorld, world);
+            String respawnToName = worldsConfig.getString(
+                worldName + ".respawnTo", "");
+
+            if (!respawnToName.equals("")) {
+                World respawnTo = plugin.getServer().getWorld(respawnToName);
+                if (respawnTo != null) {
+                    respawnRedirects.put(world, respawnTo);
+                }
             }
+        }
+
+        log.info("[NETHRAR] World respawn redirects:");
+        for (Map.Entry<World, World> mapent : respawnRedirects.entrySet()) {
+            log.info(mapent.getKey().getName() + " respawns redirect to " +
+                mapent.getValue().getName());
         }
     }
 

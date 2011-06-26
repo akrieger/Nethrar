@@ -9,7 +9,6 @@ import com.nijikokun.bukkit.Permissions.Permissions;
 
 import org.bukkit.World;
 import org.bukkit.World.Environment;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
 import org.bukkit.entity.Ghast;
