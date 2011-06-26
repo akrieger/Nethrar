@@ -41,6 +41,7 @@ public class NethrarCommandExecutor implements CommandExecutor {
                 !Nethrar.permissions.has(player, "nethrar.tp")) {
                     sender.sendMessage(ChatColor.RED + "You do not have " +
                         "permission to teleport to other worlds.");
+                return true;
             }
 
             if (args.length < 2) {
