@@ -7,4 +7,4 @@ commands:
     nethrar:
         description: Accesses Nethrar functionality.
         usage: |
-            /nethrar tp <world>
+            /nethrar tp world
