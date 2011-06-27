@@ -1,7 +1,7 @@
 name: Nethrar
 author: Andrew Krieger
 description: Portals, now with minecart support!
-version: 1.5.1
+version: 2.0
 main: org.akrieger.Nethrar.Nethrar
 commands:
     nethrar:
