@@ -244,6 +244,9 @@ public class Portal {
         Location dest;
         dest = new Location(destWorld, destX, destY, destZ, destYaw, destPitch);
 
+        //log.severe("Src: " + e.getLocation());
+        //log.severe("Dst: " + dest);
+
         // Preload chunks.
         Chunk destChunk = dest.getBlock().getChunk();
         for (int dx = -1; dx <= 1; dx++) {
@@ -345,6 +348,7 @@ public class Portal {
         } else {
             final Location threadDest = dest;
             final Entity threadE = e;
+            /*
             Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
                 PortalUtil.getPlugin(),
                 new Runnable() {
@@ -362,8 +366,11 @@ public class Portal {
                         }
                     }
                 });
+            */
+            //log.severe("Teleporting just a player.");
+            return dest;
         }
-        return dest;
+        return null;
     }
 
     /**
