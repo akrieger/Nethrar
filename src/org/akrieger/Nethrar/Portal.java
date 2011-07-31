@@ -70,6 +70,7 @@ public class Portal {
     private Block keyBlock;
 
     private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
+    private static final double OFFSET = 1.3;
 
     /**
      * Constructs a Portal for the portal at the passed in keyblock.
@@ -160,7 +161,7 @@ public class Portal {
      * @return The location the entity was teleported to, or null if the
      *     entity was not teleported.
      */
-    public Location teleport(Entity e) {
+    public Location teleport(Entity e, Location interaction) {
         if (this.counterpart != null) {
             if (!this.counterpart.isValid()) {
                 PortalUtil.removePortal(this.counterpart);
@@ -180,7 +181,7 @@ public class Portal {
         float destPitch, destYaw;
         int rotateVehicleVelocity = 0;
 
-        Vector offset = e.getLocation().toVector().subtract(
+        Vector offset = interaction.toVector().subtract(
             this.keyBlock.getLocation().toVector());
 
         Vector finalOffset;
@@ -188,10 +189,10 @@ public class Portal {
         if (this.facingNorth) {
             if (offset.getX() < .5) {
                 // Player moving south.
-                offset.setX(offset.getX() + 1);
+                offset.setX(offset.getX() + OFFSET);
             } else {
                 // Player moving north.
-                offset.setX(offset.getX() - 1);
+                offset.setX(offset.getX() - OFFSET);
             }
 
             if (this.counterpart.isFacingNorth()) {
@@ -206,10 +207,10 @@ public class Portal {
         } else {
             if (offset.getZ() < .5) {
                 // Player moving west
-                offset.setZ(offset.getZ() + 1);
+                offset.setZ(offset.getZ() + OFFSET);
             } else {
                 // Player moving east.
-                offset.setZ(offset.getZ() - 1);
+                offset.setZ(offset.getZ() - OFFSET);
             }
             if (this.counterpart.isFacingNorth()) {
                 destYaw = e.getLocation().getYaw() + 90;
@@ -243,9 +244,6 @@ public class Portal {
 
         Location dest;
         dest = new Location(destWorld, destX, destY, destZ, destYaw, destPitch);
-
-        //log.severe("Src: " + e.getLocation());
-        //log.severe("Dst: " + dest);
 
         // Preload chunks.
         Chunk destChunk = dest.getBlock().getChunk();

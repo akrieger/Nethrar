@@ -46,6 +46,6 @@ public class NethrarVehicleListener extends VehicleListener {
         }
 
         Portal portal = PortalUtil.getPortalAt(b);
-        portal.teleport(vehicle);
+        portal.teleport(vehicle, event.getTo());
     }
 }

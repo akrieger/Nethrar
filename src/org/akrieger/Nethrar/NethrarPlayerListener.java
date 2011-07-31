@@ -39,10 +39,6 @@ public class NethrarPlayerListener extends PlayerListener {
         Block b;
         Player player = event.getPlayer();
 
-        //log.severe("Got PlayerMoveEvent.");
-        //log.severe("From: " + event.getFrom());
-        //log.severe("To  : " + event.getTo());
-
         if (Nethrar.permissions != null &&
             !Nethrar.permissions.has(player, "nethrar.use")) {
             return;
@@ -61,7 +57,7 @@ public class NethrarPlayerListener extends PlayerListener {
 
         Portal portal = PortalUtil.getPortalAt(b);
         if (portal != null) {
-            Location endpoint = portal.teleport(player);
+            Location endpoint = portal.teleport(player, event.getTo());
             if (endpoint != null) {
                 event.setTo(endpoint);
             }
