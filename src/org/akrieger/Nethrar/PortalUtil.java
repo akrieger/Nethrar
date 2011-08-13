@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.config.Configuration;
@@ -46,12 +47,17 @@ public class PortalUtil {
     private static Map<World, World> worldLinks;
     private static Map<World, World> respawnRedirects;
     private static Map<World, Integer> worldScales;
+    private static Map<Material, World> blocksToWorlds;
+    private static Map<World, Material> worldsToBlocks;
+    private static Map<Entity, Long> entityLastTeleportedTime;
     // Map of chunks, encoded in a Location object, and a list of portals
     // keeping that chunk loaded.
     private static Map<Location, List<Portal>> forceLoadedChunks;
     private static int keepAliveRadius;
 
     private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
+
+    private static final long TELEPORT_TIMEOUT_NANOS = 500000000;
 
     /**
      * Initializes the utility class with the given worlds and relative spatial
@@ -80,6 +86,9 @@ public class PortalUtil {
         worldLinks = new HashMap<World, World>();
         worldScales = new HashMap<World, Integer>();
         respawnRedirects = new HashMap<World, World>();
+        blocksToWorlds = new HashMap<Material, World>();
+        worldsToBlocks = new HashMap<World, Material>();
+        entityLastTeleportedTime = new HashMap<Entity, Long>();
         forceLoadedChunks = new HashMap<Location, List<Portal>>();
 
         initializeWorlds(worldsConfig);
@@ -203,8 +212,18 @@ public class PortalUtil {
 
             String destWorldName = worldConfig.getString("destination", "");
             tempWorldLinks.put(world, destWorldName);
-            log.info("[NETHRAR] World \"" + worldName + "\", environment " +
-                envtype + ", scale " + scale + ".");
+
+            int blockId = worldConfig.getInt("worldBlock", -1);
+            if (blockId != -1) {
+                blocksToWorlds.put(Material.getMaterial(blockId), world);
+                worldsToBlocks.put(world, Material.getMaterial(blockId));
+                log.info("[NETHRAR] World \"" + worldName + "\", environment " +
+                    envtype + ", scale " + scale + ", world block ID " + blockId
+                    + ".");
+            } else {
+                log.info("[NETHRAR] World \"" + worldName + "\", environment " +
+                    envtype + ", scale " + scale + ".");
+            }
         }
 
         // Link worlds and set up metadata.
@@ -389,7 +408,7 @@ public class PortalUtil {
                 }
             }
         }
-        if(p.getCounterpart() != null) {
+        if (p.getCounterpart() != null) {
             p.getCounterpart().setCounterpart(null);
         }
         return portals.remove(b.getLocation()) != null;
@@ -414,6 +433,10 @@ public class PortalUtil {
     }
 
     public static World getDestWorldFor(Portal p) {
+        if (blocksToWorlds.get(p.getWorldBlock().getType()) != null) {
+            return blocksToWorlds.get(p.getWorldBlock().getType());
+        }
+
         return getDestWorldFor(p.getKeyBlock().getWorld());
     }
 
@@ -877,15 +900,36 @@ public class PortalUtil {
 
         if (a.getCounterpart() == null) {
             a.setCounterpart(b);
+            Material destMat = worldsToBlocks.get(b.getKeyBlock().getWorld());
+            if (destMat != null) {
+                a.getWorldBlock().setType(destMat);
+            }
         }
 
         if (b.getCounterpart() == null) {
             b.setCounterpart(a);
+            Material destMat = worldsToBlocks.get(a.getKeyBlock().getWorld());
+            if (destMat != null) {
+                b.getWorldBlock().setType(destMat);
+            }
         }
     }
 
     public static boolean isChunkForcedLoaded(Chunk c) {
         Location chunkLoc = new Location(c.getWorld(), c.getX(), 0, c.getZ());
         return forceLoadedChunks.keySet().contains(chunkLoc);
+    }
+
+    public static void markTeleported(Entity e) {
+        entityLastTeleportedTime.put(e, System.nanoTime());
+    }
+
+    public static boolean canTeleport(Entity e) {
+        Long last = entityLastTeleportedTime.get(e);
+        if (last == null) {
+            return true;
+        }
+        long delta = System.nanoTime() - last;
+        return delta > TELEPORT_TIMEOUT_NANOS;
     }
 }

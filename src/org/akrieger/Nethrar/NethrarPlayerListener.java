@@ -47,11 +47,16 @@ public class NethrarPlayerListener extends PlayerListener {
         if (!event.getPlayer().isInsideVehicle()) {
             b = event.getTo().getBlock();
         } else {
-            b = event.getTo().getBlock().getFace(BlockFace.UP);
+            b = event.getTo().getBlock().getRelative(BlockFace.UP);
         }
 
         if (!b.getType().equals(Material.PORTAL)) {
             // Not a portal.
+            return;
+        }
+
+        if (!PortalUtil.canTeleport(player)) {
+            // Teleported recently.
             return;
         }
 

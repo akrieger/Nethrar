@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Minecart;
@@ -96,9 +97,21 @@ public class Portal {
         return this.keyBlock;
     }
 
+    // Dunno if this is actually useful.
     /** Sets the keyblock for this Portal. */
     public void setBlock(Block b) {
         this.keyBlock = b;
+    }
+
+    public Block getWorldBlock() {
+        if (this.facingNorth) {
+            return this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.EAST);
+        } else {
+            return this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.NORTH);
+
+        }
     }
 
     /**
@@ -167,6 +180,11 @@ public class Portal {
                 PortalUtil.removePortal(this.counterpart);
                 this.counterpart = null;
                 PortalUtil.getCounterpartPortalFor(this);
+            } else if (!this.counterpart.getKeyBlock().getWorld().equals(
+                    PortalUtil.getDestWorldFor(this))) {
+
+                this.counterpart = null;
+                PortalUtil.getCounterpartPortalFor(this);
             }
         } else {
             PortalUtil.getCounterpartPortalFor(this);
@@ -201,7 +219,7 @@ public class Portal {
             } else {
                 destYaw = e.getLocation().getYaw() - 90;
                 finalOffset = new Vector(
-                    offset.getZ(), offset.getY(), -offset.getX() + 1);
+                    offset.getZ(), offset.getY(), -offset.getX() + OFFSET);
                 rotateVehicleVelocity = 1;
             }
         } else {
@@ -215,7 +233,7 @@ public class Portal {
             if (this.counterpart.isFacingNorth()) {
                 destYaw = e.getLocation().getYaw() + 90;
                 finalOffset = new Vector(
-                    -offset.getZ() + 1, offset.getY(), offset.getX());
+                    -offset.getZ() + OFFSET, offset.getY(), offset.getX());
                 rotateVehicleVelocity = 2;
             } else {
                 destYaw = e.getLocation().getYaw();
@@ -305,11 +323,15 @@ public class Portal {
                     newVelocity = oldVelocity;
                     break;
             }
+
+            PortalUtil.markTeleported(e);
+
             final Location threadDest = dest;
             final Entity threadE = e;
             final Vehicle threadOldV = oldV;
             final Vehicle threadNewV = newV;
             final Vector threadNewVelocity = newVelocity;
+
             Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
                 PortalUtil.getPlugin(),
                 new Runnable() {
@@ -342,11 +364,14 @@ public class Portal {
                                 threadOldV, threadNewV));
                         threadOldV.remove();
                     }
-                });
+                }
+            );
         } else {
+            PortalUtil.markTeleported(e);
+
             final Location threadDest = dest;
             final Entity threadE = e;
-            /*
+
             Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
                 PortalUtil.getPlugin(),
                 new Runnable() {
@@ -363,10 +388,8 @@ public class Portal {
                             }
                         }
                     }
-                });
-            */
-            //log.severe("Teleporting just a player.");
-            return dest;
+                }
+            );
         }
         return null;
     }
