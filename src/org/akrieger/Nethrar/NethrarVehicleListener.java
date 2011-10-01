@@ -4,8 +4,6 @@
 
 package org.akrieger.Nethrar;
 
-import com.nijiko.permissions.PermissionHandler;
-
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.event.vehicle.VehicleListener;
@@ -18,8 +16,8 @@ import java.util.logging.Logger;
 /**
  * VehicleListener object for the Portals plugin.
  *
- * This class listens for VehicleMoveEvents to determine whether a vehicle/cart hit
- * a portal and should be teleported, and for PlayerRespawnEvents to send a
+ * This class listens for VehicleMoveEvents to determine whether a vehicle/cart
+ * hit a portal and should be teleported, and for PlayerRespawnEvents to send a
  * player back to the main/first/normal world.
  *
  * @author Andrew Krieger

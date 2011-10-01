@@ -71,7 +71,7 @@ public class Portal {
     private Block keyBlock;
 
     private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
-    private static final double OFFSET = 1.3;
+    private static final double OFFSET = 1.5;
 
     /**
      * Constructs a Portal for the portal at the passed in keyblock.
@@ -182,6 +182,7 @@ public class Portal {
                 PortalUtil.getCounterpartPortalFor(this);
             } else if (!this.counterpart.getKeyBlock().getWorld().equals(
                     PortalUtil.getDestWorldFor(this))) {
+                // Did my keyblock change, and if so, change my destination.
 
                 this.counterpart = null;
                 PortalUtil.getCounterpartPortalFor(this);

@@ -16,9 +16,9 @@ import org.bukkit.World;
 
 public class NethrarCommandExecutor implements CommandExecutor {
 
-    private Plugin plugin;
+    private Nethrar plugin;
 
-    public NethrarCommandExecutor(Plugin pl) {
+    public NethrarCommandExecutor(Nethrar pl) {
         this.plugin = pl;
     }
 
@@ -37,11 +37,21 @@ public class NethrarCommandExecutor implements CommandExecutor {
         }
 
         if (args[0].equals("tp")) {
-            if (Nethrar.permissions != null &&
-                !Nethrar.permissions.has(player, "nethrar.tp")) {
-                    sender.sendMessage(ChatColor.RED + "You do not have " +
-                        "permission to teleport to other worlds.");
+            if (this.plugin.shouldUsePermissions()) {
+                if (!player.hasPermission("nethrar.tp")) {
+                    sender.sendMessage(
+                        ChatColor.RED + "You do not have permission to " +
+                        "teleport to other worlds."
+                    );
+                }
                 return true;
+            } else {
+              if (!player.isOp()) {
+                    sender.sendMessage(
+                      ChatColor.RED + "You must be an op to teleport to " +
+                      "other worlds."
+                  );
+              }
             }
 
             if (args.length < 2) {

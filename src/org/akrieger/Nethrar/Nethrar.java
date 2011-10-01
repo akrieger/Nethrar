@@ -4,9 +4,6 @@
 
 package org.akrieger.Nethrar;
 
-import com.nijiko.permissions.PermissionHandler;
-import com.nijikokun.bukkit.Permissions.Permissions;
-
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.event.Event.Priority;
@@ -37,10 +34,8 @@ import java.util.logging.Level;
  */
 public class Nethrar extends JavaPlugin {
 
-    public static PermissionHandler permissions;
-
     private final NethrarPlayerListener playerListener =
-        new NethrarPlayerListener();
+        new NethrarPlayerListener(this);
 
     private final NethrarVehicleListener vehicleListener =
         new NethrarVehicleListener();
@@ -53,6 +48,8 @@ public class Nethrar extends JavaPlugin {
 
     private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
+    private boolean usePermissions = false;
+
     public void onEnable() {
         log.setLevel(Level.INFO);
         Configuration c = getConfiguration();
@@ -63,14 +60,11 @@ public class Nethrar extends JavaPlugin {
 
         int debugLevel = c.getInt("debugLevel", 0);
 
-        boolean usePermissions = c.getBoolean("usePermissions", false);
+        this.usePermissions = c.getBoolean("usePermissions", false);
 
-        if (usePermissions) {
+        if (this.usePermissions) {
             log.info("[NETHRAR] Using Permissions. Set permissions nodes as " +
                 "appropriate.");
-            setupPermissions();
-        } else {
-            permissions = null;
         }
 
         pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
@@ -114,7 +108,7 @@ public class Nethrar extends JavaPlugin {
 
         PortalUtil.initialize(this, worldConfig, keepAliveRadius);
 
-        c.setProperty("usePermissions", usePermissions);
+        c.setProperty("usePermissions", this.usePermissions);
         c.setProperty("riderlessVehicles", riderlessVehicles);
         c.setProperty("listen.respawn", listenForRespawns);
         c.setProperty("forceLoadRadius", keepAliveRadius);
@@ -138,19 +132,6 @@ public class Nethrar extends JavaPlugin {
         }
     }
 
-    private void setupPermissions() {
-        Plugin test = getServer().getPluginManager().getPlugin("Permissions");
-
-        if (this.permissions == null) {
-            if (test != null) {
-                this.permissions = ((Permissions)test).getHandler();
-                log.info("[NETHRAR] Permissions enabled.");
-            } else {
-                log.warning("[NETHRAR] Permissions not detected.");
-            }
-        }
-    }
-
     public void onDisable() {
         if (PortalUtil.savePortals()) {
             log.info("[NETHRAR] Portal saving successful.");
@@ -161,4 +142,8 @@ public class Nethrar extends JavaPlugin {
     }
 
     public void onLoad() { }
+
+    public boolean shouldUsePermissions() {
+      return this.usePermissions;
+    }
 }

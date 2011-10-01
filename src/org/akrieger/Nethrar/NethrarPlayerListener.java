@@ -4,8 +4,6 @@
 
 package org.akrieger.Nethrar;
 
-import com.nijiko.permissions.PermissionHandler;
-
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -32,15 +30,20 @@ import java.util.logging.Logger;
 public class NethrarPlayerListener extends PlayerListener {
     private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
-    public NethrarPlayerListener() { }
+    private Nethrar plugin;
+
+    public NethrarPlayerListener(Nethrar nethrar) {
+        this.plugin = nethrar;
+    }
 
     @Override
     public void onPlayerMove(PlayerMoveEvent event) {
         Block b;
         Player player = event.getPlayer();
 
-        if (Nethrar.permissions != null &&
-            !Nethrar.permissions.has(player, "nethrar.use")) {
+        if (this.plugin.shouldUsePermissions() &&
+            !player.hasPermission("nethrar.use")) {
+
             return;
         }
 
