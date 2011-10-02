@@ -433,8 +433,9 @@ public class PortalUtil {
     }
 
     public static World getDestWorldFor(Portal p) {
-        if (blocksToWorlds.get(p.getWorldBlock().getType()) != null) {
-            return blocksToWorlds.get(p.getWorldBlock().getType());
+        Material mat = p.getWorldBlockType();
+        if (blocksToWorlds.get(mat) != null) {
+            return blocksToWorlds.get(mat);
         }
 
         return getDestWorldFor(p.getKeyBlock().getWorld());
@@ -892,7 +893,10 @@ public class PortalUtil {
         return portals;
     }
 
-    /** Links two portals together, without overriding existing linkages. */
+    /** Links two portals together, without overriding existing linkages.
+     *
+     * Note: Assumes this was initiated by a player entering a, going to b.
+     */
     public static void linkPortals(Portal a, Portal b) {
         if (a == null || b == null) {
             return;
@@ -900,18 +904,10 @@ public class PortalUtil {
 
         if (a.getCounterpart() == null) {
             a.setCounterpart(b);
-            Material destMat = worldsToBlocks.get(b.getKeyBlock().getWorld());
-            if (destMat != null) {
-                a.getWorldBlock().setType(destMat);
-            }
         }
 
         if (b.getCounterpart() == null) {
             b.setCounterpart(a);
-            Material destMat = worldsToBlocks.get(a.getKeyBlock().getWorld());
-            if (destMat != null) {
-                b.getWorldBlock().setType(destMat);
-            }
         }
     }
 

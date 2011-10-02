@@ -103,15 +103,27 @@ public class Portal {
         this.keyBlock = b;
     }
 
-    public Block getWorldBlock() {
+    public Material getWorldBlockType() {
+        Material mat1, mat2;
         if (this.facingNorth) {
-            return this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.EAST);
+            mat1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.EAST)
+                                .getType();
+            mat2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.WEST, 2)
+                                .getType();
         } else {
-            return this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.NORTH);
-
+            mat1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.NORTH)
+                                .getType();
+            mat2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.SOUTH, 2)
+                                .getType();
         }
+        if (mat1 == mat2) {
+            return mat1;
+        }
+        return null;
     }
 
     /**
@@ -180,12 +192,19 @@ public class Portal {
                 PortalUtil.removePortal(this.counterpart);
                 this.counterpart = null;
                 PortalUtil.getCounterpartPortalFor(this);
-            } else if (!this.counterpart.getKeyBlock().getWorld().equals(
-                    PortalUtil.getDestWorldFor(this))) {
-                // Did my keyblock change, and if so, change my destination.
+            } else  {
+              Material mat = this.getWorldBlockType();
+              if (mat != null &&
+                  mat != Material.AIR &&
+                  mat != Material.OBSIDIAN &&
+                  !this.counterpart.getKeyBlock().getWorld().equals(
+                      PortalUtil.getDestWorldFor(this))) {
 
-                this.counterpart = null;
-                PortalUtil.getCounterpartPortalFor(this);
+                  // Did my keyblock change, and if so, change my destination.
+
+                  this.counterpart = null;
+                  PortalUtil.getCounterpartPortalFor(this);
+                }
             }
         } else {
             PortalUtil.getCounterpartPortalFor(this);
