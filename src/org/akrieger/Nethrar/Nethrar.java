@@ -6,6 +6,8 @@ package org.akrieger.Nethrar;
 
 import org.bukkit.World;
 import org.bukkit.World.Environment;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
 import org.bukkit.entity.Ghast;
@@ -15,9 +17,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.util.config.Configuration;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -52,10 +54,10 @@ public class Nethrar extends JavaPlugin {
 
     public void onEnable() {
         log.setLevel(Level.INFO);
-        Configuration c = getConfiguration();
-        Configuration worldConfig = new Configuration(
-            new File(getDataFolder(), "worlds.yml"));
-        worldConfig.load();
+        Configuration c = getConfig();
+        File worldsFile = new File(getDataFolder(), "worlds.yml");
+        Configuration worldConfig =
+            YamlConfiguration.loadConfiguration(worldsFile);
         PluginManager pm = getServer().getPluginManager();
 
         int debugLevel = c.getInt("debugLevel", 0);
@@ -91,7 +93,7 @@ public class Nethrar extends JavaPlugin {
         }
 
         int keepAliveRadius;
-        keepAliveRadius = getConfiguration().getInt("forceLoadRadius", 0);
+        keepAliveRadius = c.getInt("forceLoadRadius", 0);
 
         if (keepAliveRadius > 0) {
             pm.registerEvent(Event.Type.CHUNK_UNLOAD, worldListener,
@@ -106,15 +108,23 @@ public class Nethrar extends JavaPlugin {
                 "set at least a radius of 2.");
         }
 
-        PortalUtil.initialize(this, worldConfig, keepAliveRadius);
+        try {
+            PortalUtil.initialize(this, worldConfig, keepAliveRadius);
+        } catch (IOException e) {
+            System.out.println("Error initializing Nethrar:");
+            e.printStackTrace();
+            throw new IllegalArgumentException(
+                "Nethrar failed, input files were malformed."
+            );
+        }
 
-        c.setProperty("usePermissions", this.usePermissions);
-        c.setProperty("riderlessVehicles", riderlessVehicles);
-        c.setProperty("listen.respawn", listenForRespawns);
-        c.setProperty("forceLoadRadius", keepAliveRadius);
-        c.setProperty("debugLevel", debugLevel);
+        c.set("usePermissions", this.usePermissions);
+        c.set("riderlessVehicles", riderlessVehicles);
+        c.set("listen.respawn", listenForRespawns);
+        c.set("forceLoadRadius", keepAliveRadius);
+        c.set("debugLevel", debugLevel);
 
-        c.save();
+        saveConfig();
 
         PluginDescriptionFile pdfFile = this.getDescription();
         log.info("[NETHRAR] " + pdfFile.getName() + " v" +
@@ -133,9 +143,12 @@ public class Nethrar extends JavaPlugin {
     }
 
     public void onDisable() {
-        if (PortalUtil.savePortals()) {
+        try {
+            if (!PortalUtil.savePortals()) {
+                throw new IllegalArgumentException("");
+            }
             log.info("[NETHRAR] Portal saving successful.");
-        } else {
+        } catch (Exception e) {
             log.severe("[NETHRAR] Unable to save portals. All links will be " +
                 "broken on reload.");
         }

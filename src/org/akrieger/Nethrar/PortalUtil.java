@@ -8,16 +8,20 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.util.config.Configuration;
-import org.bukkit.util.config.ConfigurationNode;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.IllegalArgumentException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -78,7 +82,7 @@ public class PortalUtil {
      * @return true
      */
     public static boolean initialize(Plugin pl, Configuration worldsConfig,
-            int newKeepAliveRadius) {
+            int newKeepAliveRadius) throws IOException {
 
         plugin = pl;
         keepAliveRadius = newKeepAliveRadius;
@@ -93,11 +97,11 @@ public class PortalUtil {
 
         initializeWorlds(worldsConfig);
 
-        Configuration portalsConfig = new Configuration(
-            new File(plugin.getDataFolder(), "portals.yml"));
-        portalsConfig.load();
+        File portalsFile = new File(plugin.getDataFolder(), "portals.yml");
+        YamlConfiguration portalsConfig =
+            YamlConfiguration.loadConfiguration(portalsFile);
         initializePortals(portalsConfig);
-
+        portalsConfig.save(portalsFile);
 
         return true;
     }
@@ -105,7 +109,7 @@ public class PortalUtil {
     private static void initializeWorlds(Configuration worldsConfig) {
         Map<World, String> tempWorldLinks = new HashMap<World, String>();
 
-        List<String> worldNames = worldsConfig.getKeys(null);
+        Set<String> worldNames = worldsConfig.getKeys(false);
 
         if (worldNames == null || worldNames.size() == 0) {
             // Generate defaults.
@@ -121,8 +125,9 @@ public class PortalUtil {
             if (normalWorld == null) {
                 // Ok, not getting more defensive than this. If they made
                 // 'world' be a non-normal world, sucks to be them.
-                normalWorld = plugin.getServer().createWorld(
-                    "world", Environment.NORMAL);
+                WorldCreator wc = new WorldCreator("world");
+                wc.environment(Environment.NORMAL);
+                normalWorld = wc.createWorld();
             }
 
             worlds = plugin.getServer().getWorlds();
@@ -138,9 +143,10 @@ public class PortalUtil {
             if (netherWorld == null) {
                 // Ok, not getting more defensive than this. If they made
                 // $WORLD_nether' be a non-nether world, sucks to be them.
-                netherWorld = plugin.getServer().createWorld(
-                    normalWorld.getName() + "_nether",
-                    Environment.NETHER);
+                WorldCreator wc = new WorldCreator(
+                    normalWorld.getName() + "_nether");
+                wc.environment(Environment.NETHER);
+                netherWorld = wc.createWorld();
             }
 
             worldLinks.put(normalWorld, netherWorld);
@@ -152,22 +158,22 @@ public class PortalUtil {
             String normalName = normalWorld.getName();
             String netherName = netherWorld.getName();
 
-            worldsConfig.setProperty(normalName + ".environment", "normal");
-            worldsConfig.setProperty(normalName + ".destination", netherName);
-            worldsConfig.setProperty(normalName + ".scale", 8);
+            worldsConfig.set(normalName + ".environment", "normal");
+            worldsConfig.set(normalName + ".destination", netherName);
+            worldsConfig.set(normalName + ".scale", 8);
 
-            worldsConfig.setProperty(netherName + ".environment", "nether");
-            worldsConfig.setProperty(netherName + ".destination", normalName);
-            worldsConfig.setProperty(netherName + ".scale", 1);
-            worldsConfig.setProperty(netherName + ".peaceful", false);
-            worldsConfig.setProperty(netherName + ".respawnTo", normalName);
-            worldsConfig.save();
+            worldsConfig.set(netherName + ".environment", "nether");
+            worldsConfig.set(netherName + ".destination", normalName);
+            worldsConfig.set(netherName + ".scale", 1);
+            worldsConfig.set(netherName + ".peaceful", false);
+            worldsConfig.set(netherName + ".respawnTo", normalName);
             return;
         }
 
         // Validate and generate worlds.
         for (String worldName : worldNames) {
-            ConfigurationNode worldConfig = worldsConfig.getNode(worldName);
+            ConfigurationSection worldConfig =
+                worldsConfig.getConfigurationSection(worldName);
             String envtype = worldConfig.getString("environment", "");
             Environment env;
             World world;
@@ -195,7 +201,9 @@ public class PortalUtil {
 
                 world = plugin.getServer().getWorld(worldName);
                 if (world == null) {
-                    world = plugin.getServer().createWorld(worldName, env);
+                    WorldCreator wc = new WorldCreator(worldName);
+                    wc.environment(env);
+                    world = wc.createWorld();
                 } else if(!world.getEnvironment().equals(env)) {
                     log.warning("[NETHRAR] World \"" + worldName + "\" " +
                         "already exists, but is the wrong enviroment. Either " +
@@ -254,7 +262,7 @@ public class PortalUtil {
 
     private static void initializePortals(Configuration portalConfig) {
         Map<String, Portal> namesToPortals = new HashMap<String, Portal>();
-        List<String> portalKeys = portalConfig.getKeys(null);
+        Set<String> portalKeys = portalConfig.getKeys(false);
 
         if (portals == null) {
             return;
@@ -264,9 +272,9 @@ public class PortalUtil {
             String worldName = portalKey.substring(
                 0, portalKey.lastIndexOf(";"));
 
-            ConfigurationNode config = portalConfig.getNode(portalKey);
+            ConfigurationSection config = portalConfig.getConfigurationSection(portalKey);
 
-            List<Integer> coords = config.getIntList("keyblock", null);
+            List<Integer> coords = config.getList("keyblock", null);
             if (coords == null) {
                 continue;
             }
@@ -287,7 +295,8 @@ public class PortalUtil {
             namesToPortals.put(portalKey, p);
         }
         for (String portalKey : portalKeys) {
-            ConfigurationNode config = portalConfig.getNode(portalKey);
+            ConfigurationSection config =
+                portalConfig.getConfigurationSection(portalKey);
             String destKey = config.getString("destination");
 
             Portal source = namesToPortals.get(portalKey);
@@ -298,14 +307,16 @@ public class PortalUtil {
         }
     }
 
-    public static boolean savePortals() {
-        Configuration portalConfig = new Configuration(
-            new File(plugin.getDataFolder(), "portals.yml"));
+    public static boolean savePortals() throws IOException {
+        File portalsFile = new File(plugin.getDataFolder(), "portals.yml");
+        YamlConfiguration portalConfig =
+            YamlConfiguration.loadConfiguration(portalsFile);
 
-        return savePortals(portalConfig);
+        portalConfig.save(portalsFile);
+        return true;
     }
 
-    private static boolean savePortals(Configuration portalConfig) {
+    private static void savePortals(Configuration portalConfig) {
         int nonce = 0;
         Map<Portal, String> portalKeyMap = new HashMap<Portal, String>();
 
@@ -325,10 +336,9 @@ public class PortalUtil {
             int x = l.getBlockX(), y = l.getBlockY(), z = l.getBlockZ();
             List<Integer> locCoords = Arrays.asList(x, y, z);
 
-            portalConfig.setProperty(portalKey + ".keyblock", locCoords);
-            portalConfig.setProperty(portalKey + ".destination", destKey);
+            portalConfig.set(portalKey + ".keyblock", locCoords);
+            portalConfig.set(portalKey + ".destination", destKey);
         }
-        return portalConfig.save();
     }
 
     public static Plugin getPlugin() {
