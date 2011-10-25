@@ -185,10 +185,10 @@ public class PortalUtil {
                         "does not exist, and does not have an environment " +
                         "set. Please set \"" + worldName + ".environment\" " +
                         "in worlds.yml.");
+                    throw new IllegalArgumentException("Need to set an " +
+                        "environment for world " + worldName + ", or create " +
+                        "the world through some means.");
                 }
-                throw new IllegalArgumentException("Need to set an " +
-                    "environment for world " + worldName + ", or create the " +
-                    "world through some means.");
             } else {
                 try {
                     env = Environment.valueOf(envtype.toUpperCase());
