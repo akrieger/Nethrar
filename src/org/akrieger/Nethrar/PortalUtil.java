@@ -240,6 +240,12 @@ public class PortalUtil {
             World world = plugin.getServer().getWorld(worldName);
             World destWorld = plugin.getServer().getWorld(
                 tempWorldLinks.get(world));
+            if (destWorld == null) {
+                log.severe("World " + world.getName() + " does not have a " +
+                    "valid destination set. Expected destination: " +
+                    tempWorldLinks.get(world) + ".");
+                continue;
+            }
             worldLinks.put(world, destWorld);
             log.info(world.getName() + " --> " + destWorld.getName());
             String respawnToName = worldsConfig.getString(
@@ -269,12 +275,13 @@ public class PortalUtil {
         }
 
         for (String portalKey : portalKeys) {
-            String worldName = portalKey.substring(
-                0, portalKey.lastIndexOf(";"));
+            String worldName =
+                portalKey.substring(0, portalKey.lastIndexOf(";"));
 
-            ConfigurationSection config = portalConfig.getConfigurationSection(portalKey);
+            ConfigurationSection config =
+                portalConfig.getConfigurationSection(portalKey);
 
-            List<Integer> coords = config.getList("keyblock", null);
+            List<Integer> coords = config.getIntegerList("keyblock");
             if (coords == null) {
                 continue;
             }
@@ -298,19 +305,46 @@ public class PortalUtil {
             ConfigurationSection config =
                 portalConfig.getConfigurationSection(portalKey);
             String destKey = config.getString("destination");
+            boolean prot = config.getBoolean("protected");
 
             Portal source = namesToPortals.get(portalKey);
             if (source == null) {
                 continue;
             }
             source.setCounterpart(namesToPortals.get(destKey));
+            Block keyBlock = source.getKeyBlock();
+            World world = keyBlock.getWorld();
+            int destX = keyBlock.getX(),
+                destY = keyBlock.getY(),
+                destZ = keyBlock.getZ();
+            if (prot) {
+                // Build portal block set.
+                Set<Block> pBlocks = new HashSet<Block>();
+                if (source.isFacingNorth()) {
+                    for (int z = destZ; z <= destZ + 1; z++) {
+                        pBlocks.add(world.getBlockAt(destX, destY + 0, z));
+                        pBlocks.add(world.getBlockAt(destX, destY + 1, z));
+                        pBlocks.add(world.getBlockAt(destX, destY + 2, z));
+                    }
+                } else {
+                    for (int x = destX; x <= destX + 1; x++) {
+                        pBlocks.add(world.getBlockAt(x, destY + 0, destZ));
+                        pBlocks.add(world.getBlockAt(x, destY + 1, destZ));
+                        pBlocks.add(world.getBlockAt(x, destY + 2, destZ));
+                    }
+                }
+                for (Block b : pBlocks) {
+                    NethrarBlockListener.protectPortalBlock(b);
+                }
+            }
         }
     }
 
     public static boolean savePortals() throws IOException {
         File portalsFile = new File(plugin.getDataFolder(), "portals.yml");
-        YamlConfiguration portalConfig =
-            YamlConfiguration.loadConfiguration(portalsFile);
+        YamlConfiguration portalConfig = new YamlConfiguration();
+
+        savePortals(portalConfig);
 
         portalConfig.save(portalsFile);
         return true;
@@ -338,6 +372,9 @@ public class PortalUtil {
 
             portalConfig.set(portalKey + ".keyblock", locCoords);
             portalConfig.set(portalKey + ".destination", destKey);
+            portalConfig.set(portalKey + ".protected",
+                p.getKeyBlock().getWorld().getEnvironment().equals(
+                    Environment.THE_END));
         }
     }
 
@@ -655,6 +692,17 @@ public class PortalUtil {
                 !newPlatformBlock.getType().equals(Material.PORTAL)) {
                 newPlatformBlock.setType(Material.STONE);
             }
+        }
+
+        if (dest.getWorld().getEnvironment().equals(
+                Environment.THE_END)) {
+            // Manually set portal blocks - but if they go out, you're screwed!
+            // ... if the server restarts ...
+            for (Block newPortalBlock : innerAirBlocks) {
+                newPortalBlock.setType(Material.PORTAL);
+                NethrarBlockListener.protectPortalBlock(newPortalBlock);
+            }
+            return getPortalAt(dest);
         }
 
         dest.setType(Material.FIRE);

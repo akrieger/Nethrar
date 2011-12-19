@@ -42,6 +42,9 @@ public class Nethrar extends JavaPlugin {
     private final NethrarVehicleListener vehicleListener =
         new NethrarVehicleListener();
 
+    private final NethrarBlockListener blockListener =
+        new NethrarBlockListener();
+
     private final NethrarWorldListener worldListener =
         new NethrarWorldListener();
 
@@ -68,6 +71,9 @@ public class Nethrar extends JavaPlugin {
             log.info("[NETHRAR] Using Permissions. Set permissions nodes as " +
                 "appropriate.");
         }
+
+        pm.registerEvent(Event.Type.BLOCK_PHYSICS, blockListener,
+            Priority.Normal, this);
 
         pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
             Priority.Normal, this);
