@@ -35,7 +35,6 @@ public class NethrarBlockListener extends BlockListener {
 
     @Override
     public void onBlockPhysics(BlockPhysicsEvent event) {
-        System.out.println("physics!");
         if (protectedPortalBlocks.contains(event.getBlock())) {
             event.setCancelled(true);
         }
