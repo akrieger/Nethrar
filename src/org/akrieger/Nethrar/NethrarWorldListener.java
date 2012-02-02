@@ -1,15 +1,16 @@
 /*
- * Copyright (C) 2011 Andrew Krieger.
+ * Copyright (C) 2011-present Andrew Krieger.
  */
 
 package org.akrieger.Nethrar;
 
 import org.bukkit.Chunk;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.event.world.WorldListener;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
 /**
- * WorldListener object for the Portals plugin.
+ * World Listener object for the Portals plugin.
  *
  * This class listens for ChunkUnloadEvents, and selectively cancels them
  * based on a configurable radius around portals. This is to help prevent
@@ -18,10 +19,10 @@ import org.bukkit.event.world.WorldListener;
  *
  * @author Andrew Krieger
  */
-public class NethrarWorldListener extends WorldListener {
+public class NethrarWorldListener implements Listener {
     public NethrarWorldListener() { }
 
-    @Override
+    @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
         Chunk c = event.getChunk();
         if (PortalUtil.isChunkForcedLoaded(c)) {

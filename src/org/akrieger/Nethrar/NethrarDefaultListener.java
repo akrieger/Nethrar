@@ -1,42 +1,47 @@
 /*
- * Copyright (C) 2011 Andrew Krieger.
+ * Copyright (C) 2011-present Andrew Krieger.
  */
 
 package org.akrieger.Nethrar;
 
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Vehicle;
-import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.block.Block;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * PlayerListener object for the Portals plugin.
+ * Default Listener object for the Portals plugin.
  *
  * This class listens for PlayerMoveEvents to determine whether a player hit
- * a portal and should be teleported, and for PlayerRespawnEvents to send a
- * player back to the main/first/normal world.
+ * a portal and should be teleported. It also listens for BlockPhysics events
+ * for protecting Portals in case of teleporting to the End, since we want to
+ * keep portals alive.
  *
  * @author Andrew Krieger
  */
-public class NethrarPlayerListener extends PlayerListener {
+public class NethrarDefaultListener implements Listener {
     private final Logger log = Logger.getLogger("Minecraft.Nethrar");
+
+    private static Set<Block> protectedPortalBlocks = new HashSet<Block>();
 
     private Nethrar plugin;
 
-    public NethrarPlayerListener(Nethrar nethrar) {
+    public NethrarDefaultListener(Nethrar nethrar) {
         this.plugin = nethrar;
     }
 
-    @Override
+    @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Block b;
         Player player = event.getPlayer();
@@ -72,25 +77,19 @@ public class NethrarPlayerListener extends PlayerListener {
         }
     }
 
-    @Override
-    public void onPlayerRespawn(PlayerRespawnEvent event) {
-        Location pl = event.getPlayer().getLocation();
-        if (pl == null) {
-            log.warning("[NETHRAR] Player died, but respawn event has no " +
-                "respawn location.");
-            return;
+    public static boolean protectPortalBlock(Block b) {
+        if (!b.getType().equals(Material.PORTAL)) {
+            return false;
         }
+        protectedPortalBlocks.add(b);
+        return true;
+    }
 
-        World pw = pl.getWorld();
-        if (pw == null) {
-            log.warning("[NETHRAR] Player died, respawn event has a " +
-                "location, but the location has no world.");
-            return;
-        }
-
-        World respawnWorld = PortalUtil.getRespawnWorldFor(pw);
-        if (respawnWorld != null) {
-            event.setRespawnLocation(respawnWorld.getSpawnLocation());
+    @EventHandler
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        if (protectedPortalBlocks.contains(event.getBlock())) {
+            event.setCancelled(true);
         }
     }
+
 }

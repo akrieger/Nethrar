@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Andrew Krieger.
+ * Copyright (C) 2011-present Andrew Krieger.
  */
 
 package org.akrieger.Nethrar;

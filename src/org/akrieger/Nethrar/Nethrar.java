@@ -1,20 +1,12 @@
 /*
- * Copyright (C) 2011 Andrew Krieger.
+ * Copyright (C) 2011-present Andrew Krieger.
  */
 
 package org.akrieger.Nethrar;
 
-import org.bukkit.World;
-import org.bukkit.World.Environment;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.event.Event.Priority;
-import org.bukkit.event.Event;
-import org.bukkit.entity.Ghast;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.PigZombie;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 
@@ -29,24 +21,25 @@ import java.util.logging.Level;
  * Registers listeners based on configuration settings, and initializes the
  * Portals with the relevant worlds.
  *
- * Currently supports custom names for the normal world and nether world, and
- * whether or not to capture respawn events.
+ * Currently supports custom names for the normal world and nether world,
+ * whether or not to capture respawn events, radius of chunks to keep loaded in
+ * memory, and whether to teleport riderless vehicles or not.
  *
  * @author akrieger
  */
 public class Nethrar extends JavaPlugin {
 
-    private final NethrarPlayerListener playerListener =
-        new NethrarPlayerListener(this);
+    private final NethrarRespawnListener respawnListener =
+        new NethrarRespawnListener();
 
     private final NethrarVehicleListener vehicleListener =
         new NethrarVehicleListener();
 
-    private final NethrarBlockListener blockListener =
-        new NethrarBlockListener();
-
     private final NethrarWorldListener worldListener =
         new NethrarWorldListener();
+
+    private final NethrarDefaultListener defaultListener =
+        new NethrarDefaultListener(this);
 
     private final NethrarCommandExecutor commandExecutor =
         new NethrarCommandExecutor(this);
@@ -72,19 +65,14 @@ public class Nethrar extends JavaPlugin {
                 "appropriate.");
         }
 
-        pm.registerEvent(Event.Type.BLOCK_PHYSICS, blockListener,
-            Priority.Normal, this);
-
-        pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
-            Priority.Normal, this);
+        pm.registerEvents(defaultListener, this);
 
         getCommand("nethrar").setExecutor(commandExecutor);
 
         boolean riderlessVehicles = c.getBoolean("riderlessVehicles", true);
 
         if (riderlessVehicles) {
-            pm.registerEvent(Event.Type.VEHICLE_MOVE, vehicleListener,
-                Priority.Normal, this);
+            pm.registerEvents(vehicleListener, this);
         } else {
             log.info("[NETHRAR] Not allowing riderless vehicles to teleport.");
         }
@@ -92,8 +80,7 @@ public class Nethrar extends JavaPlugin {
         boolean listenForRespawns = c.getBoolean("listen.respawn", true);
 
         if (listenForRespawns) {
-            pm.registerEvent(Event.Type.PLAYER_RESPAWN, playerListener,
-                Priority.Normal, this);
+            pm.registerEvents(respawnListener, this);
         } else {
             log.info("[NETHRAR] Not listening for player respawns.");
         }
@@ -102,8 +89,7 @@ public class Nethrar extends JavaPlugin {
         keepAliveRadius = c.getInt("forceLoadRadius", 0);
 
         if (keepAliveRadius > 0) {
-            pm.registerEvent(Event.Type.CHUNK_UNLOAD, worldListener,
-                Priority.Normal, this);
+            pm.registerEvents(worldListener, this);
 
             log.info("[NETHRAR] Forcing chunks to stay loaded in a radius of " +
                 keepAliveRadius + " around portals.");

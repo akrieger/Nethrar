@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Andrew Krieger.
+ * Copyright (C) 2011-present Andrew Krieger.
  */
 
 package org.akrieger.Nethrar;
@@ -15,6 +15,7 @@ import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
@@ -175,8 +176,12 @@ public class PortalUtil {
             ConfigurationSection worldConfig =
                 worldsConfig.getConfigurationSection(worldName);
             String envtype = worldConfig.getString("environment", "");
-            Environment env;
             World world;
+            Environment env;
+            String cgPluginName;
+            String cgArgs;
+            Plugin cgPlugin;
+            ChunkGenerator cg;
 
             if (envtype.equals("")) {
                 world = plugin.getServer().getWorld(worldName);
@@ -203,6 +208,23 @@ public class PortalUtil {
                 if (world == null) {
                     WorldCreator wc = new WorldCreator(worldName);
                     wc.environment(env);
+                    cgPluginName = worldConfig.getString(
+                        "worldGenerator.name", "");
+                    if (!cgPluginName.equals("")) {
+                        cgPlugin = plugin.getServer().getPluginManager()
+                            .getPlugin(cgPluginName);
+                        if (cgPlugin == null) {
+                            log.severe("[NETHRAR] World generator " +
+                                cgPluginName + " does not exist. Cannot " +
+                                "create world " + worldName + ".");
+                            continue;
+                        }
+                        cgArgs =
+                            worldConfig.getString("worldGenerator.args", "");
+                        cg = cgPlugin.getDefaultWorldGenerator(
+                            worldName, cgArgs);
+                        wc.generator(cg);
+                    }
                     world = wc.createWorld();
                 } else if(!world.getEnvironment().equals(env)) {
                     log.warning("[NETHRAR] World \"" + worldName + "\" " +
@@ -334,7 +356,7 @@ public class PortalUtil {
                     }
                 }
                 for (Block b : pBlocks) {
-                    NethrarBlockListener.protectPortalBlock(b);
+                    NethrarDefaultListener.protectPortalBlock(b);
                 }
             }
         }
@@ -700,7 +722,7 @@ public class PortalUtil {
             // ... if the server restarts ...
             for (Block newPortalBlock : innerAirBlocks) {
                 newPortalBlock.setType(Material.PORTAL);
-                NethrarBlockListener.protectPortalBlock(newPortalBlock);
+                NethrarDefaultListener.protectPortalBlock(newPortalBlock);
             }
             return getPortalAt(dest);
         }
