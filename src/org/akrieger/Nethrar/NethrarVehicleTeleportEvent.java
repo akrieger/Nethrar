@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 
 /**
  * NethrarVehicleTeleportEvent class.
@@ -20,12 +21,13 @@ import org.bukkit.event.Event;
  * teleported is a minecart.
  */
 public class NethrarVehicleTeleportEvent extends Event {
+    private static final HandlerList handlers = new HandlerList();
 
     private Vehicle oldV;
     private Vehicle newV;
 
     public NethrarVehicleTeleportEvent(Vehicle oldV, Vehicle newV) {
-        super("NethrarVehicleTeleportEvent");
+        super();
         this.oldV = oldV;
         this.newV = newV;
 
@@ -40,5 +42,13 @@ public class NethrarVehicleTeleportEvent extends Event {
 
     public Vehicle getNewV() {
         return this.newV;
+    }
+
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

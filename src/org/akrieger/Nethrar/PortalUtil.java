@@ -875,9 +875,9 @@ public class PortalUtil {
         }
 
         if (destWorld.getEnvironment().equals(Environment.NETHER) &&
-            destY > 119) {
+            destY > destWorld.getMaxHeight() - 8) {
 
-            destY = 119;
+            destY = destWorld.getMaxHeight() - 8;
         }
 
         destBlock = destWorld.getBlockAt((int)destX, (int)destY, (int)destZ);
@@ -946,7 +946,7 @@ public class PortalUtil {
             int maxX, int maxY, int maxZ, World w) {
 
         minY = (minY < 0 ? 0 : minY);
-        maxY = (maxY > 127 ? 127 : maxY);
+        maxY = (maxY > w.getMaxHeight() ? w.getMaxHeight() : maxY);
 
         Set<Portal> portals = new HashSet<Portal>();
 

@@ -6,6 +6,7 @@ package org.akrieger.Nethrar;
 
 import org.bukkit.entity.Minecart;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 
 /**
  * NethrarMinecartTeleportEvent class.
@@ -15,12 +16,13 @@ import org.bukkit.event.Event;
  * data successfully.
  */
 public class NethrarMinecartTeleportEvent extends Event {
+    private static final HandlerList handlers = new HandlerList();
 
     private Minecart oldCart;
     private Minecart newCart;
 
     public NethrarMinecartTeleportEvent(Minecart oldCart, Minecart newCart) {
-        super("NethrarMinecartTeleportEvent");
+        super();
         this.oldCart = oldCart;
         this.newCart = newCart;
     }
@@ -31,5 +33,13 @@ public class NethrarMinecartTeleportEvent extends Event {
 
     public Minecart getNewCart() {
         return this.newCart;
+    }
+
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

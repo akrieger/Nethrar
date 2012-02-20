@@ -120,7 +120,7 @@ public class Portal {
                                 .getRelative(BlockFace.SOUTH, 2)
                                 .getType();
         }
-        if (mat1 == mat2) {
+        if (mat1.equals(mat2)) {
             return mat1;
         }
         return null;
@@ -192,7 +192,7 @@ public class Portal {
                 PortalUtil.removePortal(this.counterpart);
                 this.counterpart = null;
                 PortalUtil.getCounterpartPortalFor(this);
-            } else  {
+            } else {
               Material mat = this.getWorldBlockType();
               if (mat != null &&
                   mat != Material.AIR &&
@@ -201,7 +201,6 @@ public class Portal {
                       PortalUtil.getDestWorldFor(this))) {
 
                   // Did my keyblock change, and if so, change my destination.
-
                   this.counterpart = null;
                   PortalUtil.getCounterpartPortalFor(this);
                 }
@@ -298,7 +297,7 @@ public class Portal {
         Vehicle oldV = null, newV = null;
         if (e instanceof Player) {
             if (((Player)e).isInsideVehicle()) {
-                oldV = ((Player)e).getVehicle();
+                oldV = (Vehicle)((Player)e).getVehicle();
                 ((Player)e).leaveVehicle();
             }
         } else if (e instanceof StorageMinecart ||
