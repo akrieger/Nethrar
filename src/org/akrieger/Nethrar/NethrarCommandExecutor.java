@@ -42,14 +42,15 @@ public class NethrarCommandExecutor implements CommandExecutor {
                         ChatColor.RED + "You do not have permission to " +
                         "teleport to other worlds."
                     );
+                    return true;
                 }
-                return true;
             } else {
               if (!player.isOp()) {
                     sender.sendMessage(
                       ChatColor.RED + "You must be an op to teleport to " +
                       "other worlds."
                   );
+                  return true;
               }
             }
 
