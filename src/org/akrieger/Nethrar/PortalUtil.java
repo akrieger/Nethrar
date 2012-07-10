@@ -54,6 +54,7 @@ public class PortalUtil {
     private static Map<World, Integer> worldScales;
     private static Map<Material, World> blocksToWorlds;
     private static Map<World, Material> worldsToBlocks;
+    private static Set<World> restrictedWorlds;
     private static Map<Entity, Long> entityLastTeleportedTime;
     // Map of chunks, encoded in a Location object, and a list of portals
     // keeping that chunk loaded.
@@ -95,6 +96,7 @@ public class PortalUtil {
         worldsToBlocks = new HashMap<World, Material>();
         entityLastTeleportedTime = new HashMap<Entity, Long>();
         forceLoadedChunks = new HashMap<Location, List<Portal>>();
+        restrictedWorlds = new HashSet<World>();
 
         initializeWorlds(worldsConfig);
 
@@ -237,6 +239,11 @@ public class PortalUtil {
             boolean peaceful = worldConfig.getBoolean("peaceful", false);
             world.setSpawnFlags(!peaceful, true);
 
+            boolean restricted = worldConfig.getBoolean("restricted", false);
+            if (restricted) {
+                restrictedWorlds.add(world);
+            }
+
             int scale = worldConfig.getInt("scale", 1);
             worldScales.put(world, scale);
 
@@ -285,6 +292,11 @@ public class PortalUtil {
         for (Map.Entry<World, World> mapent : respawnRedirects.entrySet()) {
             log.info(mapent.getKey().getName() + " respawns redirect to " +
                 mapent.getValue().getName());
+        }
+
+        log.info("[NETHRAR] Restricted worlds:");
+        for (World w : restrictedWorlds) {
+            log.info(w.getName());
         }
     }
 
@@ -694,6 +706,12 @@ public class PortalUtil {
         // We just won't delete obsidian if it exists.
 
         // Build and light the portal.
+
+        if (restrictedWorlds.contains(dest.getWorld())) {
+            // This is a restricted world, it is illegal to generate new portals
+            // in it except by hand.
+            return null;
+        }
 
         for (Block newFrameBlock : frameBlocks) {
             newFrameBlock.setType(Material.OBSIDIAN);
