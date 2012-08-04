@@ -5,6 +5,8 @@ world:
 world_nether:
         environment: nether
         destination: world
-        scale: 1
+        height: 128
+        heightScaleMode: clamp
         peaceful: false
         respawnTo: world
+        scale: 1

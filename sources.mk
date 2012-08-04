@@ -1,5 +1,6 @@
 
-SRCS=	org/akrieger/Nethrar/Nethrar.java \
+SRCS=	org/akrieger/Nethrar/BlockData.java \
+	org/akrieger/Nethrar/Nethrar.java \
 	org/akrieger/Nethrar/NethrarCommandExecutor.java \
 	org/akrieger/Nethrar/NethrarMinecartTeleportEvent.java \
 	org/akrieger/Nethrar/NethrarDefaultListener.java \

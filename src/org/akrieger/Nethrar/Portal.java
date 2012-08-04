@@ -103,25 +103,29 @@ public class Portal {
         this.keyBlock = b;
     }
 
-    public Material getWorldBlockType() {
+    public BlockData getWorldBlockType() {
+        Block b1, b2;
         Material mat1, mat2;
+        byte data1, data2;
         if (this.facingNorth) {
-            mat1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.EAST)
-                                .getType();
-            mat2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.WEST, 2)
-                                .getType();
+            b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                              .getRelative(BlockFace.EAST);
+            b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                              .getRelative(BlockFace.WEST, 2);
         } else {
-            mat1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.NORTH)
-                                .getType();
-            mat2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.SOUTH, 2)
-                                .getType();
+            b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.NORTH);
+            b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                .getRelative(BlockFace.SOUTH, 2);
         }
-        if (mat1.equals(mat2)) {
-            return mat1;
+
+        mat1 = b1.getType();
+        mat2 = b2.getType();
+        data1 = b1.getData();
+        data2 = b2.getData();
+
+        if (mat1.equals(mat2) && data1 == data2) {
+            return new BlockData(mat1, data1);
         }
         return null;
     }
@@ -193,10 +197,10 @@ public class Portal {
                 this.counterpart = null;
                 PortalUtil.getCounterpartPortalFor(this);
             } else {
-              Material mat = this.getWorldBlockType();
-              if (mat != null &&
-                  mat != Material.AIR &&
-                  mat != Material.OBSIDIAN &&
+              BlockData bd = this.getWorldBlockType();
+              if (bd != null &&
+                  !bd.m.equals(Material.AIR) &&
+                  !bd.m.equals(Material.OBSIDIAN) &&
                   !this.counterpart.getKeyBlock().getWorld().equals(
                       PortalUtil.getDestWorldFor(this))) {
 
@@ -261,6 +265,13 @@ public class Portal {
         }
 
         World destWorld = this.counterpart.getKeyBlock().getWorld();
+        String permission = "nethrar.block." + destWorld.getName();
+
+        if ((Nethrar.getPlugin().shouldUsePermissions()) &&
+            ((e instanceof Player)) &&
+            (((Player)e).hasPermission(permission))) {
+            return null;
+        }
 
         destX = this.counterpart.getKeyBlock().getX() + finalOffset.getX();
         destY = this.counterpart.getKeyBlock().getY() + finalOffset.getY();

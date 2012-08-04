@@ -29,6 +29,7 @@ import java.util.logging.Level;
  */
 public class Nethrar extends JavaPlugin {
 
+    private static Nethrar singleton;
     private final NethrarRespawnListener respawnListener =
         new NethrarRespawnListener();
 
@@ -132,6 +133,7 @@ public class Nethrar extends JavaPlugin {
             default:
                 log.setLevel(Level.SEVERE);
         }
+        singleton = this;
     }
 
     public void onDisable() {
@@ -144,11 +146,16 @@ public class Nethrar extends JavaPlugin {
             log.severe("[NETHRAR] Unable to save portals. All links will be " +
                 "broken on reload.");
         }
+        singleton = null;
     }
 
     public void onLoad() { }
 
     public boolean shouldUsePermissions() {
-      return this.usePermissions;
+        return this.usePermissions;
+    }
+
+    public static Nethrar getPlugin() {
+        return singleton;
     }
 }

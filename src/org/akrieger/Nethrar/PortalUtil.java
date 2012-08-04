@@ -52,8 +52,10 @@ public class PortalUtil {
     private static Map<World, World> worldLinks;
     private static Map<World, World> respawnRedirects;
     private static Map<World, Integer> worldScales;
-    private static Map<Material, World> blocksToWorlds;
-    private static Map<World, Material> worldsToBlocks;
+    private static Map<World, Integer> worldHeights;
+    private static Map<World, Integer> compressionMethods;
+    private static Map<BlockData, World> blocksToWorlds;
+    private static Map<World, BlockData> worldsToBlocks;
     private static Set<World> restrictedWorlds;
     private static Map<Entity, Long> entityLastTeleportedTime;
     // Map of chunks, encoded in a Location object, and a list of portals
@@ -64,6 +66,10 @@ public class PortalUtil {
     private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
     private static final long TELEPORT_TIMEOUT_NANOS = 500000000;
+
+    public static final int COMPRESS_CLAMP = 0;
+    public static final int COMPRESS_SCALE = 1;
+    public static final int COMPRESS_WRAP = 2;
 
     /**
      * Initializes the utility class with the given worlds and relative spatial
@@ -91,9 +97,11 @@ public class PortalUtil {
         portals = new HashMap<Location, Portal>();
         worldLinks = new HashMap<World, World>();
         worldScales = new HashMap<World, Integer>();
+        worldHeights = new HashMap<World, Integer>();
+        compressionMethods = new HashMap<World, Integer>();
         respawnRedirects = new HashMap<World, World>();
-        blocksToWorlds = new HashMap<Material, World>();
-        worldsToBlocks = new HashMap<World, Material>();
+        blocksToWorlds = new HashMap<BlockData, World>();
+        worldsToBlocks = new HashMap<World, BlockData>();
         entityLastTeleportedTime = new HashMap<Entity, Long>();
         forceLoadedChunks = new HashMap<Location, List<Portal>>();
         restrictedWorlds = new HashSet<World>();
@@ -247,13 +255,35 @@ public class PortalUtil {
             int scale = worldConfig.getInt("scale", 1);
             worldScales.put(world, scale);
 
+            int height = worldConfig.getInt("height", world.getMaxHeight());
+            worldHeights.put(world, height);
+
+            String mode = worldConfig.getString("heightScaleMode", "clamp");
+            if (mode.equals("clamp")) {
+                compressionMethods.put(world, COMPRESS_CLAMP);
+            } else if (mode.equals("scale")) {
+                compressionMethods.put(world, COMPRESS_SCALE);
+            } else if (mode.equals("wrap")) {
+                compressionMethods.put(world, COMPRESS_WRAP);
+            }
+
             String destWorldName = worldConfig.getString("destination", "");
             tempWorldLinks.put(world, destWorldName);
 
-            int blockId = worldConfig.getInt("worldBlock", -1);
+            String blockString = worldConfig.getString("worldBlock", "-1");
+            int blockId = -1, sep = -1;
+            byte data = 0;
+            if ((sep = blockString.indexOf("/")) != -1 && sep > 0) {
+                blockId = Integer.parseInt(blockString.substring(0, sep));
+                data = (byte)Integer.parseInt(blockString.substring(sep + 1));
+            } else {
+                blockId = Integer.parseInt(blockString);
+            }
             if (blockId != -1) {
-                blocksToWorlds.put(Material.getMaterial(blockId), world);
-                worldsToBlocks.put(world, Material.getMaterial(blockId));
+                BlockData bd =
+                    new BlockData(Material.getMaterial(blockId), data);
+                blocksToWorlds.put(bd, world);
+                worldsToBlocks.put(world, bd);
                 log.info("[NETHRAR] World \"" + worldName + "\", environment " +
                     envtype + ", scale " + scale + ", world block ID " + blockId
                     + ".");
@@ -261,6 +291,7 @@ public class PortalUtil {
                 log.info("[NETHRAR] World \"" + worldName + "\", environment " +
                     envtype + ", scale " + scale + ".");
             }
+            log.info("[NETHRAR] World \"" + worldName + " size: " + height);
         }
 
         // Link worlds and set up metadata.
@@ -509,14 +540,34 @@ public class PortalUtil {
         return 0;
     }
 
+    public static int getHeightFor(World w) {
+        Integer height = worldHeights.get(w);
+        if (height != null) {
+            return height;
+        }
+        return w.getMaxHeight();
+    }
+
+    public static int getCompressionMethodBetween(World s, World d) {
+        Integer mode = compressionMethods.get(d);
+        if (mode != null) {
+            return mode;
+        }
+        mode = compressionMethods.get(s);
+        if (mode != null) {
+            return mode;
+        }
+        return 0;
+    }
+
     public static World getRespawnWorldFor(World sourceWorld) {
         return respawnRedirects.get(sourceWorld);
     }
 
     public static World getDestWorldFor(Portal p) {
-        Material mat = p.getWorldBlockType();
-        if (blocksToWorlds.get(mat) != null) {
-            return blocksToWorlds.get(mat);
+        BlockData bd = p.getWorldBlockType();
+        if (blocksToWorlds.get(bd) != null) {
+            return blocksToWorlds.get(bd);
         }
 
         return getDestWorldFor(p.getKeyBlock().getWorld());
@@ -772,12 +823,35 @@ public class PortalUtil {
         double destX, destY, destZ;
         Block sourceKeyBlock = source.getKeyBlock();
         Block destBlock;
+        World sourceWorld = sourceKeyBlock.getWorld();
 
-        double scale = PortalUtil.getScaleFor(destWorld) /
-            (double)PortalUtil.getScaleFor(sourceKeyBlock.getWorld());
+        double scale = getScaleFor(destWorld) /
+            (double)getScaleFor(sourceWorld);
+
+        int destHeight = getHeightFor(destWorld);
+        int compressionMethod =
+            getCompressionMethodBetween(sourceWorld, destWorld);
+
+        destY = sourceKeyBlock.getY();
+
+        switch (compressionMethod) {
+            case COMPRESS_CLAMP:
+                destY = destY > destHeight ? destHeight : destY;
+                break;
+            case COMPRESS_SCALE:
+                double heightScale = destHeight /
+                    (double)getHeightFor(sourceWorld);
+                destY = Math.floor(sourceKeyBlock.getY() * heightScale);
+                break;
+            case COMPRESS_WRAP:
+                destY = destY % destHeight;
+                break;
+        }
+
+        int heightCompressionMethod =
+           getCompressionMethodBetween(sourceWorld, destWorld);
 
         destX = Math.floor(sourceKeyBlock.getX() * scale);
-        destY = sourceKeyBlock.getY();
         destZ = Math.floor(sourceKeyBlock.getZ() * scale);
 
         // If the destination world is 'larger', then we need to 'look around'
@@ -893,9 +967,9 @@ public class PortalUtil {
         }
 
         if (destWorld.getEnvironment().equals(Environment.NETHER) &&
-            destY > destWorld.getMaxHeight() - 8) {
+            destY > destHeight - 9) {
 
-            destY = destWorld.getMaxHeight() - 8;
+            destY = destHeight - 9;
         }
 
         destBlock = destWorld.getBlockAt((int)destX, (int)destY, (int)destZ);
@@ -925,13 +999,44 @@ public class PortalUtil {
             double scale, Block sourceBlock, World destWorld) {
 
         int minX, minY, minZ, maxX, maxY, maxZ, sourceX, sourceY, sourceZ;
+        World sourceWorld = sourceBlock.getWorld();
+        int compressionMethod =
+            getCompressionMethodBetween(sourceWorld, destWorld);
 
         sourceX = sourceBlock.getX();
         sourceY = sourceBlock.getY();
         sourceZ = sourceBlock.getZ();
 
-        minY = sourceY - 1;
-        maxY = sourceY + 3;
+        int destHeight = getHeightFor(destWorld), destY = 0;
+        maxY = minY = destY = 0;
+        switch (compressionMethod) {
+            case COMPRESS_CLAMP:
+                destY = sourceY > destHeight ? destHeight : sourceY;
+                maxY = destY + 3;
+                break;
+            case COMPRESS_SCALE:
+                double heightScale = destHeight /
+                    (double)getHeightFor(sourceWorld);
+                destY = (int)Math.floor(sourceY * heightScale);
+                maxY = destY + 3;
+                break;
+            case COMPRESS_WRAP:
+                destY = sourceY % destHeight;
+                maxY = destY + 3;
+                break;
+        }
+
+        if (destWorld.getEnvironment().equals(Environment.NETHER) &&
+            maxY > destHeight - 9) {
+
+            maxY = destHeight - 9;
+            minY = maxY - 4;
+        }
+        minY = maxY - 4;
+        if (minY < 6) {
+            minY = 6;
+            maxY = minY + 4;
+        }
 
         Set<Portal> portals = new HashSet<Portal>();
 
@@ -963,8 +1068,9 @@ public class PortalUtil {
     private static Set<Portal> findPortalsInRegion(int minX, int minY, int minZ,
             int maxX, int maxY, int maxZ, World w) {
 
+        int destMaxY = getHeightFor(w);
         minY = (minY < 0 ? 0 : minY);
-        maxY = (maxY > w.getMaxHeight() ? w.getMaxHeight() : maxY);
+        maxY = (maxY > destMaxY ? destMaxY : maxY);
 
         Set<Portal> portals = new HashSet<Portal>();
 
@@ -1026,4 +1132,5 @@ public class PortalUtil {
         long delta = System.nanoTime() - last;
         return delta > TELEPORT_TIMEOUT_NANOS;
     }
+
 }
