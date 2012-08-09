@@ -293,15 +293,6 @@ public class Portal {
         Location dest;
         dest = new Location(destWorld, destX, destY, destZ, destYaw, destPitch);
 
-        // Preload chunks.
-        Chunk destChunk = dest.getBlock().getChunk();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                destWorld.loadChunk(
-                    destChunk.getX() + dx, destChunk.getZ() + dz);
-            }
-        }
-
         // Bug: Player camera orientation not preserved when teleporting
         // in a vehicle. Probably because vehicle takes over player
         // camera.
@@ -355,70 +346,15 @@ public class Portal {
             }
 
             PortalUtil.markTeleported(e);
-
-            final Location threadDest = dest;
-            final Entity threadE = e;
-            final Vehicle threadOldV = oldV;
-            final Vehicle threadNewV = newV;
-            final Vector threadNewVelocity = newVelocity;
-
             Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
                 PortalUtil.getPlugin(),
-                new Runnable() {
-                    public void run() {
-                        if (threadE instanceof Player) {
-                            if (((Player)threadE).teleport(threadDest)) {
-                                World destWorld = threadE.getLocation()
-                                                         .getWorld();
-                                Chunk destChunk = threadE.getLocation()
-                                                         .getBlock().getChunk();
-                                int x = destChunk.getX(), z = destChunk.getZ();
-                                for (int dx = -1; dx <= 1; dx++) {
-                                    for (int dz = -1; dz <= 1; dz++) {
-                                        destWorld.refreshChunk(x + dx, z + dz);
-                                    }
-                                }
-                            } else {
-                                // Teleport failed for whatever reason. Abort.
-                                return;
-                            }
-                        }
-                        if (threadNewV != null) {
-                            if (threadE instanceof Player) {
-                                threadNewV.setPassenger(threadE);
-                            }
-                            threadNewV.setVelocity(threadNewVelocity);
-                        }
-                        Bukkit.getServer().getPluginManager().callEvent(
-                            new NethrarVehicleTeleportEvent(
-                                threadOldV, threadNewV));
-                        threadOldV.remove();
-                    }
-                }
+                new NethrarTeleporter(e, dest, newV, newVelocity, oldV)
             );
         } else {
             PortalUtil.markTeleported(e);
-
-            final Location threadDest = dest;
-            final Entity threadE = e;
-
             Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
                 PortalUtil.getPlugin(),
-                new Runnable() {
-                    public void run() {
-                        if (((Player)threadE).teleport(threadDest)) {
-                            World destWorld = threadE.getLocation().getWorld();
-                            Chunk destChunk = threadE.getLocation().getBlock()
-                                                                   .getChunk();
-                            int x = destChunk.getX(), z = destChunk.getZ();
-                            for (int dx = -1; dx <= 1; dx++) {
-                                for (int dz = -1; dz <= 1; dz++) {
-                                    destWorld.refreshChunk(x + dx, z + dz);
-                                }
-                            }
-                        }
-                    }
-                }
+                new NethrarTeleporter(e, dest, newV, new Vector(), newV)
             );
         }
         return null;

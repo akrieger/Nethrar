@@ -258,7 +258,7 @@ public class PortalUtil {
             int height = worldConfig.getInt("height", world.getMaxHeight());
             worldHeights.put(world, height);
 
-            String mode = worldConfig.getString("heightScaleMode", "clamp");
+            String mode = worldConfig.getString("heightScaleMode", "");
             if (mode.equals("clamp")) {
                 compressionMethods.put(world, COMPRESS_CLAMP);
             } else if (mode.equals("scale")) {
@@ -273,6 +273,17 @@ public class PortalUtil {
             String blockString = worldConfig.getString("worldBlock", "-1");
             int blockId = -1, sep = -1;
             byte data = 0;
+
+            String infostr =
+                "[NETHRAR] World \"" + worldName + "\""
+                + ", environment " + envtype
+                + ", scale " + scale
+                + ", height " + height;
+
+            if (!mode.equals("")) {
+                infostr = infostr + ", height method " + mode;
+            }
+
             if ((sep = blockString.indexOf("/")) != -1 && sep > 0) {
                 blockId = Integer.parseInt(blockString.substring(0, sep));
                 data = (byte)Integer.parseInt(blockString.substring(sep + 1));
@@ -284,14 +295,10 @@ public class PortalUtil {
                     new BlockData(Material.getMaterial(blockId), data);
                 blocksToWorlds.put(bd, world);
                 worldsToBlocks.put(world, bd);
-                log.info("[NETHRAR] World \"" + worldName + "\", environment " +
-                    envtype + ", scale " + scale + ", world block ID " + blockId
-                    + ".");
-            } else {
-                log.info("[NETHRAR] World \"" + worldName + "\", environment " +
-                    envtype + ", scale " + scale + ".");
+                infostr = infostr + ", world block ID " + blockId
+                                  + ", block data " + data;
             }
-            log.info("[NETHRAR] World \"" + worldName + " size: " + height);
+            log.info(infostr + ".");
         }
 
         // Link worlds and set up metadata.
