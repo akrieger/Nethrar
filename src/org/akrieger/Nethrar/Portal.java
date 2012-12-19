@@ -286,7 +286,8 @@ public class Portal {
 
         if ((Nethrar.getPlugin().shouldUsePermissions()) &&
             ((e instanceof Player)) &&
-            (((Player)e).hasPermission(permission))) {
+            (((Player)e).hasPermission(permission)) &&
+            !((Player)e).isOp()) {
             return null;
         }
 
