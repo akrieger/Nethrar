@@ -29,9 +29,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * Utility class for interacting with and managing Portals in the world.
@@ -65,7 +66,9 @@ public class PortalUtil {
 
     private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
-    private static final long TELEPORT_TIMEOUT_NANOS = 500000000;
+    private static final long TELEPORT_TIMEOUT_NANOS = 500000000l;
+    private static final long CLEANUP_TIMEOUT_NANOS = 5000000000l;
+    private static long lastCleanup = 0;
 
     public static final int COMPRESS_CLAMP = 0;
     public static final int COMPRESS_SCALE = 1;
@@ -102,7 +105,7 @@ public class PortalUtil {
         respawnRedirects = new HashMap<World, World>();
         blocksToWorlds = new HashMap<BlockData, World>();
         worldsToBlocks = new HashMap<World, BlockData>();
-        entityLastTeleportedTime = new HashMap<Entity, Long>();
+        entityLastTeleportedTime = new ConcurrentHashMap<Entity, Long>();
         forceLoadedChunks = new HashMap<Location, List<Portal>>();
         restrictedWorlds = new HashSet<World>();
 
@@ -1128,7 +1131,11 @@ public class PortalUtil {
     }
 
     public static void markTeleported(Entity e) {
-        entityLastTeleportedTime.put(e, System.nanoTime());
+        markTeleported(e, TELEPORT_TIMEOUT_NANOS);
+    }
+
+    public static void markTeleported(Entity e, long delay) {
+        entityLastTeleportedTime.put(e, System.nanoTime() + delay);
     }
 
     public static boolean canTeleport(Entity e) {
@@ -1136,8 +1143,19 @@ public class PortalUtil {
         if (last == null) {
             return true;
         }
-        long delta = System.nanoTime() - last;
-        return delta > TELEPORT_TIMEOUT_NANOS;
+        long now = System.nanoTime();
+        boolean result = now > last;
+        if (now - lastCleanup > CLEANUP_TIMEOUT_NANOS) {
+            lastCleanup = now;
+            Map<Entity, Long> old = entityLastTeleportedTime;
+            entityLastTeleportedTime = new ConcurrentHashMap<Entity, Long>();
+            for (Entity eOld : old.keySet()) {
+                long eTime = old.get(eOld);
+                if (now < eTime) {
+                    entityLastTeleportedTime.put(eOld, eTime);
+                }
+            }
+        }
+        return result;
     }
-
 }

@@ -8,11 +8,16 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityPortalEnterEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.block.Block;
@@ -40,6 +45,23 @@ public class NethrarDefaultListener implements Listener {
 
     public NethrarDefaultListener(Nethrar nethrar) {
         this.plugin = nethrar;
+    }
+
+    @EventHandler
+    public void onEntityPortalEnter(EntityPortalEnterEvent event) {
+        Entity e = event.getEntity();
+        if (e instanceof Player || ((e instanceof Vehicle) && !(e instanceof Pig))) {
+            return;
+        }
+        if (!PortalUtil.canTeleport(e)) {
+            // Teleported recently.
+            return;
+        }
+        Block b = event.getLocation().getBlock();
+        Portal portal = PortalUtil.getPortalAt(b);
+        if (portal != null) {
+            portal.teleport(e, e.getLocation());
+        }
     }
 
     @EventHandler

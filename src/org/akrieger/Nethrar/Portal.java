@@ -5,7 +5,6 @@
 package org.akrieger.Nethrar;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -15,6 +14,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Minecart;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.StorageMinecart;
 import org.bukkit.entity.Vehicle;
@@ -299,8 +299,8 @@ public class Portal {
 
         // Jitter the location just a bit so the resulting minecart doesn't
         // end up underground, if there is a minecart being teleported.
-        if (e instanceof Player && ((Player)e).isInsideVehicle()
-            || e instanceof Vehicle) {
+        if ((e instanceof Player && ((Player)e).isInsideVehicle()) ||
+            (e instanceof Vehicle && !(e instanceof Pig))) {
             // +.11 is necessary to get a minecart to spawn on top of, instead
             // of inside, rails on the same level on the other side. However,
             // if there are *not* rails on the other side, then the minecart
@@ -370,10 +370,9 @@ public class Portal {
             );
         } else {
             PortalUtil.markTeleported(e);
-            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
-                PortalUtil.getPlugin(),
-                new NethrarTeleporter(e, dest, newV, new Vector(), newV)
-            );
+            // Regular player teleportation doesn't need to be delayed.
+            NethrarTeleporter tp = new NethrarTeleporter(e, dest);
+            tp.run();
         }
         return null;
     }
