@@ -107,16 +107,33 @@ public class Portal {
         Block b1, b2;
         Material mat1, mat2;
         byte data1, data2;
-        if (this.facingNorth) {
-            b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                              .getRelative(BlockFace.EAST);
-            b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                              .getRelative(BlockFace.WEST, 2);
+        boolean legacyBlockFace = BlockFace.NORTH.getModX() == -1;
+        // This all needs to be remathed. Ugh.
+        if (legacyBlockFace) {
+            if (this.facingNorth) {
+                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                  .getRelative(BlockFace.EAST);
+                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                  .getRelative(BlockFace.WEST, 2);
+            } else {
+                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                    .getRelative(BlockFace.NORTH);
+                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                    .getRelative(BlockFace.SOUTH, 2);
+            }
         } else {
-            b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.NORTH);
-            b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                .getRelative(BlockFace.SOUTH, 2);
+            if (this.facingNorth) {
+                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                  .getRelative(BlockFace.NORTH);
+                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                  .getRelative(BlockFace.SOUTH, 2);
+            } else {
+                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                    .getRelative(BlockFace.WEST);
+                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+                                    .getRelative(BlockFace.EAST, 2);
+            }
+
         }
 
         mat1 = b1.getType();
