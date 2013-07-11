@@ -10,4 +10,5 @@ SRCS=	org/akrieger/Nethrar/BlockData.java \
 	org/akrieger/Nethrar/NethrarVehicleListener.java \
 	org/akrieger/Nethrar/NethrarWorldListener.java \
 	org/akrieger/Nethrar/Portal.java \
-	org/akrieger/Nethrar/PortalUtil.java
+	org/akrieger/Nethrar/PortalUtil.java \
+	org/akrieger/Nethrar/Teleporter.java
