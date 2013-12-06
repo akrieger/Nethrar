@@ -2,14 +2,14 @@ PLUGIN=$(shell basename `pwd`)
 PROJ_ROOT=$(shell dirname `pwd`)
 OBJ_DIR=bin
 SRC_DIR=src
-BUKKIT_API=../include/bukkit.jar
+API=../include/mcpc-api.jar
 JAR=$(PLUGIN).jar
 
 include sources.mk
 
 SRCS_FULL=$(addprefix $(SRC_DIR)/,$(SRCS))
 
-JAVACFLAGS = -d $(OBJ_DIR) -cp $(BUKKIT_API)
+JAVACFLAGS = -d $(OBJ_DIR) -cp $(API)
 
 $(JAR): $(SRCS_FULL)
 	mkdir -p $(OBJ_DIR)

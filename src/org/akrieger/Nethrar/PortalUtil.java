@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -58,6 +59,7 @@ public class PortalUtil {
   private static Map<BlockData, World> blocksToWorlds;
   private static Map<World, BlockData> worldsToBlocks;
   private static Set<World> restrictedWorlds;
+  private static Map<String, World> worlds;
   private static Map<Entity, Long> entityLastTeleportedTime;
   // Map of chunks, encoded in a Location object, and a list of portals
   // keeping that chunk loaded.
@@ -108,6 +110,7 @@ public class PortalUtil {
     entityLastTeleportedTime = new ConcurrentHashMap<Entity, Long>();
     forceLoadedChunks = new HashMap<Location, List<Portal>>();
     restrictedWorlds = new HashSet<World>();
+    worlds = new HashMap<String, World>();
 
     initializeWorlds(worldsConfig);
 
@@ -121,15 +124,16 @@ public class PortalUtil {
   }
 
   private static void initializeWorlds(Configuration worldsConfig) {
-    Map<World, String> tempWorldLinks = new HashMap<World, String>();
+    Map<String, String> tempWorldLinks = new HashMap<String, String>();
+    Map<String, UUID> worldNameToUUID = new HashMap<String, UUID>();
 
     Set<String> worldNames = worldsConfig.getKeys(false);
 
     if (worldNames == null || worldNames.size() == 0) {
       // Generate defaults.
-      List<World> worlds = plugin.getServer().getWorlds();
+      List<World> serverWorlds = plugin.getServer().getWorlds();
       World normalWorld = null;
-      for (World w : worlds) {
+      for (World w : serverWorlds) {
         if (w.getEnvironment().equals(Environment.NORMAL)) {
           normalWorld = w;
           break;
@@ -141,13 +145,13 @@ public class PortalUtil {
         // 'world' be a non-normal world, sucks to be them.
         WorldCreator wc = new WorldCreator("world");
         wc.environment(Environment.NORMAL);
-        normalWorld = wc.createWorld();
+        normalWorld = plugin.getServer().createWorld(wc);
       }
 
-      worlds = plugin.getServer().getWorlds();
+      serverWorlds = plugin.getServer().getWorlds();
       World netherWorld = null;
 
-      for (World w : worlds) {
+      for (World w : serverWorlds) {
         if (w.getEnvironment().equals(Environment.NETHER)) {
           netherWorld = w;
           break;
@@ -160,7 +164,7 @@ public class PortalUtil {
         WorldCreator wc = new WorldCreator(
                                            normalWorld.getName() + "_nether");
         wc.environment(Environment.NETHER);
-        netherWorld = wc.createWorld();
+        netherWorld = plugin.getServer().createWorld(wc);
       }
 
       worldLinks.put(normalWorld, netherWorld);
@@ -238,7 +242,7 @@ public class PortalUtil {
                                                    worldName, cgArgs);
             wc.generator(cg);
           }
-          world = wc.createWorld();
+          world = plugin.getServer().createWorld(wc);
         } else if(!world.getEnvironment().equals(env)) {
           log.warning("[NETHRAR] World \"" + worldName + "\" " +
                       "already exists, but is the wrong enviroment. Either " +
@@ -246,6 +250,8 @@ public class PortalUtil {
                       "environment in the configuration file.");
         }
       }
+
+      worlds.put(worldName, world);
 
       boolean peaceful = worldConfig.getBoolean("peaceful", false);
       world.setSpawnFlags(!peaceful, true);
@@ -271,7 +277,7 @@ public class PortalUtil {
       }
 
       String destWorldName = worldConfig.getString("destination", "");
-      tempWorldLinks.put(world, destWorldName);
+      tempWorldLinks.put(world.getName(), destWorldName);
 
       String blockString = worldConfig.getString("worldBlock", "-1");
       int blockId = -1, sep = -1;
@@ -302,18 +308,18 @@ public class PortalUtil {
           + ", block data " + data;
       }
       log.info(infostr + ".");
+      worldNameToUUID.put(world.getName(), world.getUID());
     }
 
     // Link worlds and set up metadata.
     log.info("[NETHRAR] World graph:");
     for (String worldName : worldNames) {
-      World world = plugin.getServer().getWorld(worldName);
-      World destWorld = plugin.getServer().getWorld(
-                                                    tempWorldLinks.get(world));
+      World world = getWorld(worldName);
+      World destWorld = getWorld(tempWorldLinks.get(world.getName()));
       if (destWorld == null) {
         log.severe("World " + world.getName() + " does not have a " +
                    "valid destination set. Expected destination: " +
-                   tempWorldLinks.get(world) + ".");
+                   tempWorldLinks.get(world.getName()) + ".");
         continue;
       }
       worldLinks.put(world, destWorld);
@@ -322,7 +328,7 @@ public class PortalUtil {
                                                     worldName + ".respawnTo", "");
 
       if (!respawnToName.equals("")) {
-        World respawnTo = plugin.getServer().getWorld(respawnToName);
+        World respawnTo = getWorld(respawnToName);
         if (respawnTo != null) {
           respawnRedirects.put(world, respawnTo);
         }
@@ -361,7 +367,7 @@ public class PortalUtil {
         continue;
       }
 
-      World portalWorld = plugin.getServer().getWorld(worldName);
+      World portalWorld = getWorld(worldName);
       if (portalWorld == null) {
         continue;
       }
@@ -795,8 +801,7 @@ public class PortalUtil {
       }
     }
 
-    if (dest.getWorld().getEnvironment().equals(
-                                                Environment.THE_END)) {
+    if (dest.getWorld().getEnvironment().equals(Environment.THE_END)) {
       // Manually set portal blocks - but if they go out, you're screwed!
       // ... if the server restarts ...
       for (Block newPortalBlock : innerAirBlocks) {
@@ -811,10 +816,14 @@ public class PortalUtil {
     if (dest.getType().equals(Material.PORTAL)) {
       // Successful portal ignition.
       return getPortalAt(dest);
+    } else {
+      // #yolo
+      for (Block newPortalBlock : innerAirBlocks) {
+        newPortalBlock.setType(Material.PORTAL);
+        NethrarDefaultListener.protectPortalBlock(newPortalBlock);
+      }
+      return getPortalAt(dest);
     }
-
-    // Nope!
-    return null;
   }
 
   public static Portal getCounterpartPortalFor(Portal source) {
@@ -1138,7 +1147,7 @@ public class PortalUtil {
     entityLastTeleportedTime.put(e, System.nanoTime() + delay);
   }
 
-  public static boolean canTeleport(Entity e) {
+  public static synchronized boolean canTeleport(Entity e) {
     Long last = entityLastTeleportedTime.get(e);
     if (last == null) {
       return true;
@@ -1149,13 +1158,17 @@ public class PortalUtil {
       lastCleanup = now;
       Map<Entity, Long> old = entityLastTeleportedTime;
       entityLastTeleportedTime = new ConcurrentHashMap<Entity, Long>();
-      for (Entity eOld : old.keySet()) {
-        long eTime = old.get(eOld);
+      for (Map.Entry<Entity, Long> entryOld : old.entrySet()) {
+        long eTime = entryOld.getValue();
         if (now < eTime) {
-          entityLastTeleportedTime.put(eOld, eTime);
+          entityLastTeleportedTime.put(entryOld.getKey(), eTime);
         }
       }
     }
     return result;
+  }
+
+  public static World getWorld(String name) {
+    return worlds.get(name);
   }
 }

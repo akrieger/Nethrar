@@ -73,6 +73,10 @@ public class NethrarTeleporter implements Teleporter {
     return this;
   }
 
+  public Teleporter setSourceVector(Vector v) {
+    return this;
+  }
+
   public Teleporter setDestinationVelocity(Vector v) {
     this.velocity = v;
     return this;
@@ -82,7 +86,37 @@ public class NethrarTeleporter implements Teleporter {
     // Preload chunks.
     Chunk dChunk = destination.getBlock().getChunk();
     World dWorld = destination.getWorld();
+    boolean vehiclePorted = false;
+    boolean entityPorted = false;
 
+    if (v != null) {
+      vehiclePorted = v.teleport(destination);
+      if (vehiclePorted) {
+        PortalUtil.markTeleported(v);
+      }
+    }
+    if (e != null) {
+      entityPorted = e.teleport(destination);
+      if (entityPorted) {
+        PortalUtil.markTeleported(e);
+      }
+    }
+    if (vehiclePorted) {
+      final Vehicle fv = this.v;
+      final Entity fe = this.e;
+      final Vector fvv = this.velocity;
+      Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
+        PortalUtil.getPlugin(),
+        new Runnable() {
+          public void run() {
+            fv.setPassenger(fe);
+            fv.setVelocity(fvv);
+          }
+        },
+        1
+      );
+    }
+      /*
     if (e != null) {
       boolean teleportSuccess = false;
       if (e instanceof Item) {
@@ -101,12 +135,12 @@ public class NethrarTeleporter implements Teleporter {
       } else if (isSpawnTeleportableEntity(e)) {
         LivingEntity eNew = (LivingEntity)dWorld.spawn(destination, e.getClass());
         if (eNew != null) {
-          int health = ((LivingEntity)e).getHealth();
-          if (health < 0) {
+          double health = ((LivingEntity)e).getHealth();
+          if (health <= 0) {
             // Entity is dead, don't bother.
             return;
           }
-          int newHealth = ((LivingEntity)e).getHealth();
+          double newHealth = ((LivingEntity)e).getHealth();
           newHealth = Math.max(
             Math.min(
               newHealth,
@@ -167,6 +201,7 @@ public class NethrarTeleporter implements Teleporter {
     if (oldv != null) {
       oldv.remove();
     }
+      */
   }
 
   private static boolean isSpawnTeleportableEntity(Entity e) {

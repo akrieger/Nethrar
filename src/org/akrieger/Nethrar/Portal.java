@@ -219,7 +219,8 @@ public class Portal {
             !bd.m.equals(Material.AIR) &&
             !bd.m.equals(Material.OBSIDIAN) &&
             !this.counterpart.getKeyBlock().getWorld().equals(
-                                                              PortalUtil.getDestWorldFor(this))) {
+              PortalUtil.getDestWorldFor(this))
+        ) {
 
           // Did my keyblock change, and if so, change my destination.
           this.counterpart = null;
@@ -240,7 +241,8 @@ public class Portal {
     int rotateVehicleVelocity = 0;
 
     Vector offset = interaction.toVector().subtract(
-                                                    this.keyBlock.getLocation().toVector());
+      this.keyBlock.getLocation().toVector()
+    );
 
     Vector finalOffset;
 
@@ -259,7 +261,8 @@ public class Portal {
       } else {
         destYaw = e.getLocation().getYaw() - 90;
         finalOffset = new Vector(
-                                 offset.getZ(), offset.getY(), -offset.getX() + OFFSET);
+          offset.getZ(), offset.getY(), -offset.getX() + OFFSET
+        );
         rotateVehicleVelocity = 1;
       }
     } else {
@@ -273,7 +276,8 @@ public class Portal {
       if (this.counterpart.isFacingNorth()) {
         destYaw = e.getLocation().getYaw() + 90;
         finalOffset = new Vector(
-                                 -offset.getZ() + OFFSET, offset.getY(), offset.getX());
+          -offset.getZ() + OFFSET, offset.getY(), offset.getX()
+        );
         rotateVehicleVelocity = 2;
       } else {
         destYaw = e.getLocation().getYaw();
@@ -305,7 +309,10 @@ public class Portal {
       // of inside, rails on the same level on the other side. However,
       // if there are *not* rails on the other side, then the minecart
       // will fall into the block underneath, unless a +1 is added.
-      destY += 1.0;
+      // At least in 1.6.4, this is no longer necessary. Vehicle position
+      // is slightly above the rails so we just use the vehicle's place
+      // as the interaction point, and it just works.
+      //destY += 1.0;
     }
 
     Location dest;
@@ -325,20 +332,11 @@ public class Portal {
                e instanceof Boat) {
 
       oldV = ((Vehicle)e);
+      e = null;
     }
 
     if (oldV != null) {
-      if (oldV instanceof StorageMinecart) {
-        newV = destWorld.spawn(dest, StorageMinecart.class);
-        ((StorageMinecart)newV).getInventory().setContents(
-                                                           ((StorageMinecart)oldV).getInventory().getContents());
-      } else if (oldV instanceof Minecart) {
-        newV = destWorld.spawn(dest, Minecart.class);
-      } else if (oldV instanceof Boat) {
-        newV = destWorld.spawn(dest, Boat.class);
-      } else {
-        log.warning("[NETHRAR] Unsupported vehicle hit a portal.");
-      }
+      newV = oldV;
 
       Vector oldVelocity = oldV.getVelocity();
       Vector newVelocity;
@@ -363,11 +361,15 @@ public class Portal {
           break;
       }
 
-      PortalUtil.markTeleported(e);
+      if (e != null) {
+        PortalUtil.markTeleported(e);
+      }
+      PortalUtil.markTeleported(oldV);
+      oldV = null;
       Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
-                                                                PortalUtil.getPlugin(),
-                                                                new NethrarTeleporter(e, dest, newV, newVelocity, oldV)
-                                                               );
+        PortalUtil.getPlugin(),
+        new NethrarTeleporter(e, dest, newV, newVelocity, oldV)
+      );
     } else {
       PortalUtil.markTeleported(e);
       // Regular player teleportation doesn't need to be delayed.
@@ -393,37 +395,26 @@ public class Portal {
 
     if (this.facingNorth) {
       for (int dz = 0; dz <= 1; dz++) {
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX, testY - 1, testZ + dz));
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX, testY + 3, testZ + dz));
+        frameBlocks.add(testWorld.getBlockAt(testX, testY - 1, testZ + dz));
+        frameBlocks.add(testWorld.getBlockAt(testX, testY + 3, testZ + dz));
       }
     } else {
       for (int dx = 0; dx <= 1; dx++) {
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX + dx, testY - 1, testZ));
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX + dx, testY + 3, testZ));
+        frameBlocks.add(testWorld.getBlockAt(testX + dx, testY - 1, testZ));
+        frameBlocks.add(testWorld.getBlockAt(testX + dx, testY + 3, testZ));
       }
     }
 
     for (int dy = 0; dy <= 2; dy++) {
-      portalBlocks.add(testBlock.getWorld().getBlockAt(
-                                                       testX, testY + dy, testZ));
+      portalBlocks.add(testBlock.getWorld().getBlockAt(testX, testY + dy, testZ));
       if (this.facingNorth) {
-        portalBlocks.add(testWorld.getBlockAt(
-                                              testX, testY + dy, testZ + 1));
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX, testY + dy, testZ + 2));
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX, testY + dy, testZ - 1));
+        portalBlocks.add(testWorld.getBlockAt(testX, testY + dy, testZ + 1));
+        frameBlocks.add(testWorld.getBlockAt(testX, testY + dy, testZ + 2));
+        frameBlocks.add(testWorld.getBlockAt(testX, testY + dy, testZ - 1));
       } else {
-        portalBlocks.add(testWorld.getBlockAt(
-                                              testX + 1, testY + dy, testZ));
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX + 2, testY + dy, testZ));
-        frameBlocks.add(testWorld.getBlockAt(
-                                             testX - 1, testY + dy, testZ));
+        portalBlocks.add(testWorld.getBlockAt(testX + 1, testY + dy, testZ));
+        frameBlocks.add(testWorld.getBlockAt(testX + 2, testY + dy, testZ));
+        frameBlocks.add(testWorld.getBlockAt(testX - 1, testY + dy, testZ));
       }
     }
 

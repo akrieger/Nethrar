@@ -18,8 +18,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPortalEnterEvent;
+import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.block.Block;
 
 import java.util.HashSet;
@@ -65,6 +69,22 @@ public class NethrarDefaultListener implements Listener {
   }
 
   @EventHandler
+  public void onPlayerPortalEvent(PlayerPortalEvent event) {
+    if (event.getCause() == TeleportCause.NETHER_PORTAL) {
+      event.setCancelled(true);
+    }
+  }
+
+  @EventHandler
+  public void onEntityPortalEvent(EntityPortalEvent event) {
+    event.setCancelled(true);
+  }
+
+  @EventHandler
+  public void onPortalCreateEvent(PortalCreateEvent event) {
+  }
+
+  @EventHandler
   public void onPlayerMove(PlayerMoveEvent event) {
     Block b;
     Player player = event.getPlayer();
@@ -93,7 +113,13 @@ public class NethrarDefaultListener implements Listener {
 
     Portal portal = PortalUtil.getPortalAt(b);
     if (portal != null) {
-      Location endpoint = portal.teleport(player, event.getTo());
+      Location interaction = event.getTo();
+      if (player.isInsideVehicle()) {
+        // Because of funny bugs, use the vehicle's position as the interaction
+        // point.
+        interaction = player.getVehicle().getLocation();
+      }
+      Location endpoint = portal.teleport(player, interaction);
       if (endpoint != null) {
         event.setTo(endpoint);
       }
