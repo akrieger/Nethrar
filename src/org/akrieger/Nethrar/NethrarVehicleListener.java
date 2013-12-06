@@ -22,27 +22,27 @@ import java.util.logging.Logger;
  * @author Andrew Krieger
  */
 public class NethrarVehicleListener implements Listener {
-    private final Logger log = Logger.getLogger("Minecraft.Nethrar");
+  private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
-    public NethrarVehicleListener() { }
+  public NethrarVehicleListener() { }
 
-    @EventHandler
-    public void onVehicleMove(VehicleMoveEvent event) {
-        Block b;
-        Vehicle vehicle = event.getVehicle();
+  @EventHandler
+  public void onVehicleMove(VehicleMoveEvent event) {
+    Block b;
+    Vehicle vehicle = event.getVehicle();
 
-        if (vehicle.getPassenger() != null) {
-            return;
-        }
-
-        b = vehicle.getLocation().getBlock();
-
-        if (!b.getType().equals(Material.PORTAL)) {
-            // Not a portal.
-            return;
-        }
-
-        Portal portal = PortalUtil.getPortalAt(b);
-        portal.teleport(vehicle, event.getTo());
+    if (vehicle.getPassenger() != null) {
+      return;
     }
+
+    b = vehicle.getLocation().getBlock();
+
+    if (!b.getType().equals(Material.PORTAL)) {
+      // Not a portal.
+      return;
+    }
+
+    Portal portal = PortalUtil.getPortalAt(b);
+    portal.teleport(vehicle, event.getTo());
+  }
 }

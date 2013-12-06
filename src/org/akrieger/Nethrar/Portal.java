@@ -36,414 +36,414 @@ import java.util.logging.Logger;
  */
 public class Portal {
 
-    /*
-     * The keyBlock is the portal keyBlock with the most negative coordinates.
-     * In the case of a portal in the YZ plane (enter facing east/west), this is
-     * the most north, bottom, keyBlock. In the case of a portal in the XZ plane
-     * (enter facing north/west), this is the more east, bottom, keyBlock.
-     *
-     * When facing west and looking into a portal, this is the coordinate of the
-     * bottom-right portal keyBlock, of the bottom-right corner of the face
-     * nearer to the entity. When facing north into a portal, this is the
-     * coordinate of the same portal keyBlock, and still the bottom-right
-     * corner, but the other side of the portal from the entity.
-     *
-     * So, when an entity enters a portal, we get a triplet of coordinates,
-     * which tell us which portal keyBlock the entity entered. This is the
-     * keyBlock coord of the entity's *feet*.
-     *
-     * To determine the canonical portal location, take the location we are
-     * given (which may be a middle or bottom keyBlock, depending, but never a
-     * top keyBlock unless hax are employed), check the keyBlocks in the more
-     * negative directions until they are non-portal. Then we know we found the
-     * keyBlock we need to index by.
-     */
+  /*
+   * The keyBlock is the portal keyBlock with the most negative coordinates.
+   * In the case of a portal in the YZ plane (enter facing east/west), this is
+   * the most north, bottom, keyBlock. In the case of a portal in the XZ plane
+   * (enter facing north/west), this is the more east, bottom, keyBlock.
+   *
+   * When facing west and looking into a portal, this is the coordinate of the
+   * bottom-right portal keyBlock, of the bottom-right corner of the face
+   * nearer to the entity. When facing north into a portal, this is the
+   * coordinate of the same portal keyBlock, and still the bottom-right
+   * corner, but the other side of the portal from the entity.
+   *
+   * So, when an entity enters a portal, we get a triplet of coordinates,
+   * which tell us which portal keyBlock the entity entered. This is the
+   * keyBlock coord of the entity's *feet*.
+   *
+   * To determine the canonical portal location, take the location we are
+   * given (which may be a middle or bottom keyBlock, depending, but never a
+   * top keyBlock unless hax are employed), check the keyBlocks in the more
+   * negative directions until they are non-portal. Then we know we found the
+   * keyBlock we need to index by.
+   */
 
-    /*
-     *   N - negative x
-     *   ^
-     *   |
-     *   +-> E - negative z
-     */
+  /*
+   *   N - negative x
+   *   ^
+   *   |
+   *   +-> E - negative z
+   */
 
-    private Portal counterpart;
-    private boolean facingNorth;
-    private Block keyBlock;
+  private Portal counterpart;
+  private boolean facingNorth;
+  private Block keyBlock;
 
-    private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
-    private static final double OFFSET = 1.5;
+  private static final Logger log = Logger.getLogger("Minecraft.Nethrar");
+  private static final double OFFSET = 1.5;
 
-    /**
-     * Constructs a Portal for the portal at the passed in keyblock.
-     *
-     * @param b The keyblock for the portal. It should be of type
-     *     Material.PORTAL, otherwise this portal will never get entered by
-     *     the player.
-     */
-    public Portal(Block b) {
-        keyBlock = b;
-        this.facingNorth = b.getWorld()
-                            .getBlockAt(b.getX(), b.getY(), b.getZ() - 1)
-                            .getType().equals(Material.PORTAL) ||
-                           b.getWorld()
-                            .getBlockAt(b.getX(), b.getY(), b.getZ() + 1)
-                            .getType().equals(Material.PORTAL);
+  /**
+   * Constructs a Portal for the portal at the passed in keyblock.
+   *
+   * @param b The keyblock for the portal. It should be of type
+   *     Material.PORTAL, otherwise this portal will never get entered by
+   *     the player.
+   */
+  public Portal(Block b) {
+    keyBlock = b;
+    this.facingNorth = b.getWorld()
+      .getBlockAt(b.getX(), b.getY(), b.getZ() - 1)
+      .getType().equals(Material.PORTAL) ||
+      b.getWorld()
+      .getBlockAt(b.getX(), b.getY(), b.getZ() + 1)
+      .getType().equals(Material.PORTAL);
 
-        counterpart = null;
+    counterpart = null;
+  }
+
+  /** Returns the keyblock for this Portal. */
+  public Block getKeyBlock() {
+    return this.keyBlock;
+  }
+
+  // Dunno if this is actually useful.
+  /** Sets the keyblock for this Portal. */
+  public void setBlock(Block b) {
+    this.keyBlock = b;
+  }
+
+  public BlockData getWorldBlockType() {
+    Block b1, b2;
+    Material mat1, mat2;
+    byte data1, data2;
+    boolean legacyBlockFace = BlockFace.NORTH.getModX() == -1;
+    // This all needs to be remathed. Ugh.
+    if (legacyBlockFace) {
+      if (this.facingNorth) {
+        b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.EAST);
+        b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.WEST, 2);
+      } else {
+        b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.NORTH);
+        b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.SOUTH, 2);
+      }
+    } else {
+      if (this.facingNorth) {
+        b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.NORTH);
+        b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.SOUTH, 2);
+      } else {
+        b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.WEST);
+        b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
+          .getRelative(BlockFace.EAST, 2);
+      }
+
     }
 
-    /** Returns the keyblock for this Portal. */
-    public Block getKeyBlock() {
-        return this.keyBlock;
+    mat1 = b1.getType();
+    mat2 = b2.getType();
+    data1 = b1.getData();
+    data2 = b2.getData();
+
+    if (mat1.equals(mat2) && data1 == data2) {
+      return new BlockData(mat1, data1);
+    }
+    return null;
+  }
+
+  /**
+   * Returns whether this Portal "faces north", or whether the portal blocks
+   * are arranged in the YZ plane.
+   */
+  public boolean isFacingNorth() {
+    return this.facingNorth;
+  }
+
+  /** Returns the counterpart Portal for this Portal. */
+  public Portal getCounterpart() {
+    return this.counterpart;
+  }
+
+  /** Sets the counterpart Portal for this Portal. */
+  public void setCounterpart(Portal newCounterpart) {
+    this.counterpart = newCounterpart;
+  }
+
+  /** Returns the Location of this Portal's keyblock. */
+  public Location getLocation() {
+    return this.keyBlock.getLocation();
+  }
+
+  /** Returns whether this Portal equals the other Portal. */
+  public boolean equals(Portal p) {
+    return this.keyBlock.equals(p.getKeyBlock()) &&
+      this.keyBlock.getWorld().equals(p.getKeyBlock().getWorld()) &&
+      this.facingNorth == p.isFacingNorth();
+  }
+
+  /**
+   * Teleports the passed in Entity through the portal.
+   *
+   * Given an Entity object, attempts to teleport them through the portal.
+   * This involves many steps.
+   * 1) Verify the portal on the other end still exists. If it doesn't,
+   *    mark this as such.
+   * 2) If there is no counterpart, figure out where it would be, and get it.
+   *    This may involve generating and placing a portal into the world.
+   * 3) Assuming we now have a counterpart, figure out where to teleport the
+   *    entity to.
+   *    3a) Figure out the entity's position relative to the entry portal.
+   *    3b) Translate this to a position relative to the exit portal.
+   *    3c) Preserve the entity's camera's orientation relative to the portal.
+   * 4) Teleport the entity.
+   *    4a) If the entity is a Player in a vehicle, we do a dance.
+   *        - Raise the destination by 1 (vehicles have to 'fall' into the
+   *        portal to avoid losing momentum, so they should be one higher).
+   *        - Make the player leave the vehicle.
+   *        - Spawn a new minecart at the destination.
+   *        - Teleport the player to the destination.
+   *        - Make the player a passenger of the minecart.
+   *        - Give the new minecart the (properly translated) velocity of the
+   *        old vehicle.
+   *        - Remove the old vehicle.
+   *
+   * @param e The entity to teleport.
+   * @return The location the entity was teleported to, or null if the
+   *     entity was not teleported.
+   */
+  public Location teleport(Entity e, Location interaction) {
+    if (this.counterpart != null) {
+      if (!this.counterpart.isValid()) {
+        PortalUtil.removePortal(this.counterpart);
+        this.counterpart = null;
+        PortalUtil.getCounterpartPortalFor(this);
+      } else {
+        BlockData bd = this.getWorldBlockType();
+        if (bd != null &&
+            !bd.m.equals(Material.AIR) &&
+            !bd.m.equals(Material.OBSIDIAN) &&
+            !this.counterpart.getKeyBlock().getWorld().equals(
+                                                              PortalUtil.getDestWorldFor(this))) {
+
+          // Did my keyblock change, and if so, change my destination.
+          this.counterpart = null;
+          PortalUtil.getCounterpartPortalFor(this);
+        }
+      }
+    } else {
+      PortalUtil.getCounterpartPortalFor(this);
     }
 
-    // Dunno if this is actually useful.
-    /** Sets the keyblock for this Portal. */
-    public void setBlock(Block b) {
-        this.keyBlock = b;
+    if (this.counterpart == null) {
+      // Could not establish a link, for whatever reason.
+      return null;
     }
 
-    public BlockData getWorldBlockType() {
-        Block b1, b2;
-        Material mat1, mat2;
-        byte data1, data2;
-        boolean legacyBlockFace = BlockFace.NORTH.getModX() == -1;
-        // This all needs to be remathed. Ugh.
-        if (legacyBlockFace) {
-            if (this.facingNorth) {
-                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                  .getRelative(BlockFace.EAST);
-                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                  .getRelative(BlockFace.WEST, 2);
-            } else {
-                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                    .getRelative(BlockFace.NORTH);
-                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                    .getRelative(BlockFace.SOUTH, 2);
-            }
-        } else {
-            if (this.facingNorth) {
-                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                  .getRelative(BlockFace.NORTH);
-                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                  .getRelative(BlockFace.SOUTH, 2);
-            } else {
-                b1 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                    .getRelative(BlockFace.WEST);
-                b2 = this.keyBlock.getRelative(BlockFace.UP, 3)
-                                    .getRelative(BlockFace.EAST, 2);
-            }
+    double destX, destY, destZ;
+    float destPitch, destYaw;
+    int rotateVehicleVelocity = 0;
 
-        }
+    Vector offset = interaction.toVector().subtract(
+                                                    this.keyBlock.getLocation().toVector());
 
-        mat1 = b1.getType();
-        mat2 = b2.getType();
-        data1 = b1.getData();
-        data2 = b2.getData();
+    Vector finalOffset;
 
-        if (mat1.equals(mat2) && data1 == data2) {
-            return new BlockData(mat1, data1);
-        }
-        return null;
+    if (this.facingNorth) {
+      if (offset.getX() < .5) {
+        // Player moving south.
+        offset.setX(offset.getX() + OFFSET);
+      } else {
+        // Player moving north.
+        offset.setX(offset.getX() - OFFSET);
+      }
+
+      if (this.counterpart.isFacingNorth()) {
+        destYaw = e.getLocation().getYaw();
+        finalOffset = offset;
+      } else {
+        destYaw = e.getLocation().getYaw() - 90;
+        finalOffset = new Vector(
+                                 offset.getZ(), offset.getY(), -offset.getX() + OFFSET);
+        rotateVehicleVelocity = 1;
+      }
+    } else {
+      if (offset.getZ() < .5) {
+        // Player moving west
+        offset.setZ(offset.getZ() + OFFSET);
+      } else {
+        // Player moving east.
+        offset.setZ(offset.getZ() - OFFSET);
+      }
+      if (this.counterpart.isFacingNorth()) {
+        destYaw = e.getLocation().getYaw() + 90;
+        finalOffset = new Vector(
+                                 -offset.getZ() + OFFSET, offset.getY(), offset.getX());
+        rotateVehicleVelocity = 2;
+      } else {
+        destYaw = e.getLocation().getYaw();
+        finalOffset = offset;
+      }
     }
 
-    /**
-     * Returns whether this Portal "faces north", or whether the portal blocks
-     * are arranged in the YZ plane.
-     */
-    public boolean isFacingNorth() {
-        return this.facingNorth;
+    World destWorld = this.counterpart.getKeyBlock().getWorld();
+    String permission = "nethrar.block." + destWorld.getName();
+
+    if ((Nethrar.getPlugin().shouldUsePermissions()) &&
+        ((e instanceof Player)) &&
+        (((Player)e).hasPermission(permission)) &&
+        !((Player)e).isOp()) {
+      return null;
     }
 
-    /** Returns the counterpart Portal for this Portal. */
-    public Portal getCounterpart() {
-        return this.counterpart;
+    destX = this.counterpart.getKeyBlock().getX() + finalOffset.getX();
+    destY = this.counterpart.getKeyBlock().getY() + finalOffset.getY();
+    destZ = this.counterpart.getKeyBlock().getZ() + finalOffset.getZ();
+
+    destPitch = e.getLocation().getPitch();
+
+    // Jitter the location just a bit so the resulting minecart doesn't
+    // end up underground, if there is a minecart being teleported.
+    if ((e instanceof Player && ((Player)e).isInsideVehicle()) ||
+        (e instanceof Vehicle && !(e instanceof Pig))) {
+      // +.11 is necessary to get a minecart to spawn on top of, instead
+      // of inside, rails on the same level on the other side. However,
+      // if there are *not* rails on the other side, then the minecart
+      // will fall into the block underneath, unless a +1 is added.
+      destY += 1.0;
     }
 
-    /** Sets the counterpart Portal for this Portal. */
-    public void setCounterpart(Portal newCounterpart) {
-        this.counterpart = newCounterpart;
+    Location dest;
+    dest = new Location(destWorld, destX, destY, destZ, destYaw, destPitch);
+
+    // Bug: Player camera orientation not preserved when teleporting
+    // in a vehicle. Probably because vehicle takes over player
+    // camera.
+    Vehicle oldV = null, newV = null;
+    if (e instanceof Player) {
+      if (((Player)e).isInsideVehicle()) {
+        oldV = (Vehicle)((Player)e).getVehicle();
+        ((Player)e).leaveVehicle();
+      }
+    } else if (e instanceof StorageMinecart ||
+               e instanceof Minecart ||
+               e instanceof Boat) {
+
+      oldV = ((Vehicle)e);
     }
 
-    /** Returns the Location of this Portal's keyblock. */
-    public Location getLocation() {
-        return this.keyBlock.getLocation();
+    if (oldV != null) {
+      if (oldV instanceof StorageMinecart) {
+        newV = destWorld.spawn(dest, StorageMinecart.class);
+        ((StorageMinecart)newV).getInventory().setContents(
+                                                           ((StorageMinecart)oldV).getInventory().getContents());
+      } else if (oldV instanceof Minecart) {
+        newV = destWorld.spawn(dest, Minecart.class);
+      } else if (oldV instanceof Boat) {
+        newV = destWorld.spawn(dest, Boat.class);
+      } else {
+        log.warning("[NETHRAR] Unsupported vehicle hit a portal.");
+      }
+
+      Vector oldVelocity = oldV.getVelocity();
+      Vector newVelocity;
+      switch (rotateVehicleVelocity) {
+        // Left-handed system - clockwise is positive.
+        case 1:
+          // In a north-facing portal, out a west-facing portal.
+          // Rotate 90 degrees counterclockwise.
+          newVelocity = new Vector(oldVelocity.getZ(),
+                                   oldVelocity.getY(),
+                                   oldVelocity.getX() * -1);
+          break;
+        case 2:
+          // In a west-facing portal, out a north-facing portal.
+          // Rotate 90 degrees clockwise.
+          newVelocity = new Vector(oldVelocity.getZ() * -1,
+                                   oldVelocity.getY(),
+                                   oldVelocity.getX());
+          break;
+        default:
+          newVelocity = oldVelocity;
+          break;
+      }
+
+      PortalUtil.markTeleported(e);
+      Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
+                                                                PortalUtil.getPlugin(),
+                                                                new NethrarTeleporter(e, dest, newV, newVelocity, oldV)
+                                                               );
+    } else {
+      PortalUtil.markTeleported(e);
+      // Regular player teleportation doesn't need to be delayed.
+      NethrarTeleporter tp = new NethrarTeleporter(e, dest);
+      tp.run();
+    }
+    return null;
+  }
+
+  /**
+   * Returns whether or not this is still a valid portal in the world,
+   * according to various heuristics.
+   *
+   * Checks that the portal is still lit, i.e. all portal blocks still exist.
+   */
+  public boolean isValid() {
+    Set<Block> portalBlocks = new HashSet<Block>();
+    Set<Block> frameBlocks = new HashSet<Block>();
+    Block testBlock = this.keyBlock;
+    World testWorld = testBlock.getWorld();
+    int testX = testBlock.getX(), testY = testBlock.getY(),
+        testZ = testBlock.getZ();
+
+    if (this.facingNorth) {
+      for (int dz = 0; dz <= 1; dz++) {
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX, testY - 1, testZ + dz));
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX, testY + 3, testZ + dz));
+      }
+    } else {
+      for (int dx = 0; dx <= 1; dx++) {
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX + dx, testY - 1, testZ));
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX + dx, testY + 3, testZ));
+      }
     }
 
-    /** Returns whether this Portal equals the other Portal. */
-    public boolean equals(Portal p) {
-        return this.keyBlock.equals(p.getKeyBlock()) &&
-            this.keyBlock.getWorld().equals(p.getKeyBlock().getWorld()) &&
-            this.facingNorth == p.isFacingNorth();
+    for (int dy = 0; dy <= 2; dy++) {
+      portalBlocks.add(testBlock.getWorld().getBlockAt(
+                                                       testX, testY + dy, testZ));
+      if (this.facingNorth) {
+        portalBlocks.add(testWorld.getBlockAt(
+                                              testX, testY + dy, testZ + 1));
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX, testY + dy, testZ + 2));
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX, testY + dy, testZ - 1));
+      } else {
+        portalBlocks.add(testWorld.getBlockAt(
+                                              testX + 1, testY + dy, testZ));
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX + 2, testY + dy, testZ));
+        frameBlocks.add(testWorld.getBlockAt(
+                                             testX - 1, testY + dy, testZ));
+      }
     }
 
-    /**
-     * Teleports the passed in Entity through the portal.
-     *
-     * Given an Entity object, attempts to teleport them through the portal.
-     * This involves many steps.
-     * 1) Verify the portal on the other end still exists. If it doesn't,
-     *    mark this as such.
-     * 2) If there is no counterpart, figure out where it would be, and get it.
-     *    This may involve generating and placing a portal into the world.
-     * 3) Assuming we now have a counterpart, figure out where to teleport the
-     *    entity to.
-     *    3a) Figure out the entity's position relative to the entry portal.
-     *    3b) Translate this to a position relative to the exit portal.
-     *    3c) Preserve the entity's camera's orientation relative to the portal.
-     * 4) Teleport the entity.
-     *    4a) If the entity is a Player in a vehicle, we do a dance.
-     *        - Raise the destination by 1 (vehicles have to 'fall' into the
-     *        portal to avoid losing momentum, so they should be one higher).
-     *        - Make the player leave the vehicle.
-     *        - Spawn a new minecart at the destination.
-     *        - Teleport the player to the destination.
-     *        - Make the player a passenger of the minecart.
-     *        - Give the new minecart the (properly translated) velocity of the
-     *        old vehicle.
-     *        - Remove the old vehicle.
-     *
-     * @param e The entity to teleport.
-     * @return The location the entity was teleported to, or null if the
-     *     entity was not teleported.
-     */
-    public Location teleport(Entity e, Location interaction) {
-        if (this.counterpart != null) {
-            if (!this.counterpart.isValid()) {
-                PortalUtil.removePortal(this.counterpart);
-                this.counterpart = null;
-                PortalUtil.getCounterpartPortalFor(this);
-            } else {
-              BlockData bd = this.getWorldBlockType();
-              if (bd != null &&
-                  !bd.m.equals(Material.AIR) &&
-                  !bd.m.equals(Material.OBSIDIAN) &&
-                  !this.counterpart.getKeyBlock().getWorld().equals(
-                      PortalUtil.getDestWorldFor(this))) {
+    boolean portalValid = true;
 
-                  // Did my keyblock change, and if so, change my destination.
-                  this.counterpart = null;
-                  PortalUtil.getCounterpartPortalFor(this);
-                }
-            }
-        } else {
-            PortalUtil.getCounterpartPortalFor(this);
-        }
-
-        if (this.counterpart == null) {
-            // Could not establish a link, for whatever reason.
-            return null;
-        }
-
-        double destX, destY, destZ;
-        float destPitch, destYaw;
-        int rotateVehicleVelocity = 0;
-
-        Vector offset = interaction.toVector().subtract(
-            this.keyBlock.getLocation().toVector());
-
-        Vector finalOffset;
-
-        if (this.facingNorth) {
-            if (offset.getX() < .5) {
-                // Player moving south.
-                offset.setX(offset.getX() + OFFSET);
-            } else {
-                // Player moving north.
-                offset.setX(offset.getX() - OFFSET);
-            }
-
-            if (this.counterpart.isFacingNorth()) {
-                destYaw = e.getLocation().getYaw();
-                finalOffset = offset;
-            } else {
-                destYaw = e.getLocation().getYaw() - 90;
-                finalOffset = new Vector(
-                    offset.getZ(), offset.getY(), -offset.getX() + OFFSET);
-                rotateVehicleVelocity = 1;
-            }
-        } else {
-            if (offset.getZ() < .5) {
-                // Player moving west
-                offset.setZ(offset.getZ() + OFFSET);
-            } else {
-                // Player moving east.
-                offset.setZ(offset.getZ() - OFFSET);
-            }
-            if (this.counterpart.isFacingNorth()) {
-                destYaw = e.getLocation().getYaw() + 90;
-                finalOffset = new Vector(
-                    -offset.getZ() + OFFSET, offset.getY(), offset.getX());
-                rotateVehicleVelocity = 2;
-            } else {
-                destYaw = e.getLocation().getYaw();
-                finalOffset = offset;
-            }
-        }
-
-        World destWorld = this.counterpart.getKeyBlock().getWorld();
-        String permission = "nethrar.block." + destWorld.getName();
-
-        if ((Nethrar.getPlugin().shouldUsePermissions()) &&
-            ((e instanceof Player)) &&
-            (((Player)e).hasPermission(permission)) &&
-            !((Player)e).isOp()) {
-            return null;
-        }
-
-        destX = this.counterpart.getKeyBlock().getX() + finalOffset.getX();
-        destY = this.counterpart.getKeyBlock().getY() + finalOffset.getY();
-        destZ = this.counterpart.getKeyBlock().getZ() + finalOffset.getZ();
-
-        destPitch = e.getLocation().getPitch();
-
-        // Jitter the location just a bit so the resulting minecart doesn't
-        // end up underground, if there is a minecart being teleported.
-        if ((e instanceof Player && ((Player)e).isInsideVehicle()) ||
-            (e instanceof Vehicle && !(e instanceof Pig))) {
-            // +.11 is necessary to get a minecart to spawn on top of, instead
-            // of inside, rails on the same level on the other side. However,
-            // if there are *not* rails on the other side, then the minecart
-            // will fall into the block underneath, unless a +1 is added.
-            destY += 1.0;
-        }
-
-        Location dest;
-        dest = new Location(destWorld, destX, destY, destZ, destYaw, destPitch);
-
-        // Bug: Player camera orientation not preserved when teleporting
-        // in a vehicle. Probably because vehicle takes over player
-        // camera.
-        Vehicle oldV = null, newV = null;
-        if (e instanceof Player) {
-            if (((Player)e).isInsideVehicle()) {
-                oldV = (Vehicle)((Player)e).getVehicle();
-                ((Player)e).leaveVehicle();
-            }
-        } else if (e instanceof StorageMinecart ||
-            e instanceof Minecart ||
-            e instanceof Boat) {
-
-            oldV = ((Vehicle)e);
-        }
-
-        if (oldV != null) {
-            if (oldV instanceof StorageMinecart) {
-                newV = destWorld.spawn(dest, StorageMinecart.class);
-                ((StorageMinecart)newV).getInventory().setContents(
-                    ((StorageMinecart)oldV).getInventory().getContents());
-            } else if (oldV instanceof Minecart) {
-                newV = destWorld.spawn(dest, Minecart.class);
-            } else if (oldV instanceof Boat) {
-                newV = destWorld.spawn(dest, Boat.class);
-            } else {
-                log.warning("[NETHRAR] Unsupported vehicle hit a portal.");
-            }
-
-            Vector oldVelocity = oldV.getVelocity();
-            Vector newVelocity;
-            switch (rotateVehicleVelocity) {
-                // Left-handed system - clockwise is positive.
-                case 1:
-                    // In a north-facing portal, out a west-facing portal.
-                    // Rotate 90 degrees counterclockwise.
-                    newVelocity = new Vector(oldVelocity.getZ(),
-                                             oldVelocity.getY(),
-                                             oldVelocity.getX() * -1);
-                    break;
-                case 2:
-                    // In a west-facing portal, out a north-facing portal.
-                    // Rotate 90 degrees clockwise.
-                    newVelocity = new Vector(oldVelocity.getZ() * -1,
-                                             oldVelocity.getY(),
-                                             oldVelocity.getX());
-                    break;
-                default:
-                    newVelocity = oldVelocity;
-                    break;
-            }
-
-            PortalUtil.markTeleported(e);
-            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
-                PortalUtil.getPlugin(),
-                new NethrarTeleporter(e, dest, newV, newVelocity, oldV)
-            );
-        } else {
-            PortalUtil.markTeleported(e);
-            // Regular player teleportation doesn't need to be delayed.
-            NethrarTeleporter tp = new NethrarTeleporter(e, dest);
-            tp.run();
-        }
-        return null;
+    for (Block tBlock : portalBlocks) {
+      if (!tBlock.getType().equals(Material.PORTAL)) {
+        portalValid = false;
+        break;
+      }
     }
 
-    /**
-     * Returns whether or not this is still a valid portal in the world,
-     * according to various heuristics.
-     *
-     * Checks that the portal is still lit, i.e. all portal blocks still exist.
-     */
-    public boolean isValid() {
-        Set<Block> portalBlocks = new HashSet<Block>();
-        Set<Block> frameBlocks = new HashSet<Block>();
-        Block testBlock = this.keyBlock;
-        World testWorld = testBlock.getWorld();
-        int testX = testBlock.getX(), testY = testBlock.getY(),
-            testZ = testBlock.getZ();
-
-        if (this.facingNorth) {
-            for (int dz = 0; dz <= 1; dz++) {
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX, testY - 1, testZ + dz));
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX, testY + 3, testZ + dz));
-            }
-        } else {
-            for (int dx = 0; dx <= 1; dx++) {
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX + dx, testY - 1, testZ));
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX + dx, testY + 3, testZ));
-            }
-        }
-
-        for (int dy = 0; dy <= 2; dy++) {
-            portalBlocks.add(testBlock.getWorld().getBlockAt(
-                testX, testY + dy, testZ));
-            if (this.facingNorth) {
-                portalBlocks.add(testWorld.getBlockAt(
-                    testX, testY + dy, testZ + 1));
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX, testY + dy, testZ + 2));
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX, testY + dy, testZ - 1));
-            } else {
-                portalBlocks.add(testWorld.getBlockAt(
-                    testX + 1, testY + dy, testZ));
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX + 2, testY + dy, testZ));
-                frameBlocks.add(testWorld.getBlockAt(
-                    testX - 1, testY + dy, testZ));
-            }
-        }
-
-        boolean portalValid = true;
-
-        for (Block tBlock : portalBlocks) {
-            if (!tBlock.getType().equals(Material.PORTAL)) {
-                portalValid = false;
-                break;
-            }
-        }
-
-        for (Block tBlock : frameBlocks) {
-            if (!portalValid || !tBlock.getType().equals(Material.OBSIDIAN)) {
-                portalValid = false;
-                break;
-            }
-        }
-
-        // TODO: add more validity tests.
-        return portalValid;
+    for (Block tBlock : frameBlocks) {
+      if (!portalValid || !tBlock.getType().equals(Material.OBSIDIAN)) {
+        portalValid = false;
+        break;
+      }
     }
+
+    // TODO: add more validity tests.
+    return portalValid;
+  }
 }

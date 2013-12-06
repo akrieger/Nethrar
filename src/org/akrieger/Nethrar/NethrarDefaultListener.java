@@ -37,81 +37,81 @@ import java.util.logging.Logger;
  * @author Andrew Krieger
  */
 public class NethrarDefaultListener implements Listener {
-    private final Logger log = Logger.getLogger("Minecraft.Nethrar");
+  private final Logger log = Logger.getLogger("Minecraft.Nethrar");
 
-    private static Set<Block> protectedPortalBlocks = new HashSet<Block>();
+  private static Set<Block> protectedPortalBlocks = new HashSet<Block>();
 
-    private Nethrar plugin;
+  private Nethrar plugin;
 
-    public NethrarDefaultListener(Nethrar nethrar) {
-        this.plugin = nethrar;
+  public NethrarDefaultListener(Nethrar nethrar) {
+    this.plugin = nethrar;
+  }
+
+  @EventHandler
+  public void onEntityPortalEnter(EntityPortalEnterEvent event) {
+    Entity e = event.getEntity();
+    if (e instanceof Player || ((e instanceof Vehicle) && !(e instanceof Pig))) {
+      return;
+    }
+    if (!PortalUtil.canTeleport(e)) {
+      // Teleported recently.
+      return;
+    }
+    Block b = event.getLocation().getBlock();
+    Portal portal = PortalUtil.getPortalAt(b);
+    if (portal != null) {
+      portal.teleport(e, e.getLocation());
+    }
+  }
+
+  @EventHandler
+  public void onPlayerMove(PlayerMoveEvent event) {
+    Block b;
+    Player player = event.getPlayer();
+
+    if (this.plugin.shouldUsePermissions() &&
+        !player.hasPermission("nethrar.use")) {
+
+      return;
     }
 
-    @EventHandler
-    public void onEntityPortalEnter(EntityPortalEnterEvent event) {
-        Entity e = event.getEntity();
-        if (e instanceof Player || ((e instanceof Vehicle) && !(e instanceof Pig))) {
-            return;
-        }
-        if (!PortalUtil.canTeleport(e)) {
-            // Teleported recently.
-            return;
-        }
-        Block b = event.getLocation().getBlock();
-        Portal portal = PortalUtil.getPortalAt(b);
-        if (portal != null) {
-            portal.teleport(e, e.getLocation());
-        }
+    if (!event.getPlayer().isInsideVehicle()) {
+      b = event.getTo().getBlock();
+    } else {
+      b = event.getTo().getBlock().getRelative(BlockFace.UP);
     }
 
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        Block b;
-        Player player = event.getPlayer();
-
-        if (this.plugin.shouldUsePermissions() &&
-            !player.hasPermission("nethrar.use")) {
-
-            return;
-        }
-
-        if (!event.getPlayer().isInsideVehicle()) {
-            b = event.getTo().getBlock();
-        } else {
-            b = event.getTo().getBlock().getRelative(BlockFace.UP);
-        }
-
-        if (!b.getType().equals(Material.PORTAL)) {
-            // Not a portal.
-            return;
-        }
-
-        if (!PortalUtil.canTeleport(player)) {
-            // Teleported recently.
-            return;
-        }
-
-        Portal portal = PortalUtil.getPortalAt(b);
-        if (portal != null) {
-            Location endpoint = portal.teleport(player, event.getTo());
-            if (endpoint != null) {
-                event.setTo(endpoint);
-            }
-        }
+    if (!b.getType().equals(Material.PORTAL)) {
+      // Not a portal.
+      return;
     }
 
-    public static boolean protectPortalBlock(Block b) {
-        if (!b.getType().equals(Material.PORTAL)) {
-            return false;
-        }
-        protectedPortalBlocks.add(b);
-        return true;
+    if (!PortalUtil.canTeleport(player)) {
+      // Teleported recently.
+      return;
     }
 
-    @EventHandler
-    public void onBlockPhysics(BlockPhysicsEvent event) {
-        if (protectedPortalBlocks.contains(event.getBlock())) {
-            event.setCancelled(true);
-        }
+    Portal portal = PortalUtil.getPortalAt(b);
+    if (portal != null) {
+      Location endpoint = portal.teleport(player, event.getTo());
+      if (endpoint != null) {
+        event.setTo(endpoint);
+      }
     }
+  }
+
+  public static boolean protectPortalBlock(Block b) {
+    if (!b.getType().equals(Material.PORTAL)) {
+      return false;
+    }
+    protectedPortalBlocks.add(b);
+    return true;
+  }
+
+  @EventHandler
+  public void onBlockPhysics(BlockPhysicsEvent event) {
+    if (protectedPortalBlocks.contains(event.getBlock())) {
+      event.setCancelled(true);
+    }
+  }
 }

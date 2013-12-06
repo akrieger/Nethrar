@@ -20,13 +20,13 @@ import org.bukkit.event.Listener;
  * @author Andrew Krieger
  */
 public class NethrarWorldListener implements Listener {
-    public NethrarWorldListener() { }
+  public NethrarWorldListener() { }
 
-    @EventHandler
-    public void onChunkUnload(ChunkUnloadEvent event) {
-        Chunk c = event.getChunk();
-        if (PortalUtil.isChunkForcedLoaded(c)) {
-            event.setCancelled(true);
-        }
+  @EventHandler
+  public void onChunkUnload(ChunkUnloadEvent event) {
+    Chunk c = event.getChunk();
+    if (PortalUtil.isChunkForcedLoaded(c)) {
+      event.setCancelled(true);
     }
+  }
 }
